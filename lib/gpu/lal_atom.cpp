@@ -14,6 +14,8 @@
  ***************************************************************************/
 
 #include "lal_atom.h"
+#include "lal_sort.h"
+#include "geryon/ucl_print.h"
 
 #ifdef USE_HIP_DEVICE_SORT
 #include <hip/hip_runtime.h>
@@ -376,7 +378,11 @@ double AtomT::host_memory_usage() const {
 // Sort arrays for neighbor list calculation
 template <class numtyp, class acctyp>
 void AtomT::sort_neighbor(const int num_atoms) {
+  ucl_print(dev_cell_id, 100);
+  printf("\n=======================\n");
   #ifdef USE_CUDPP
+  RadixSort<unsigned, int> sorter(&dev_cell_id, &dev_particle_id);
+  sorter.Sort(num_atoms);
   CUDPPResult result = cudppSort(sort_plan, (unsigned *)dev_cell_id.begin(),
                                  (int *)dev_particle_id.begin(),
                                  8*sizeof(unsigned), num_atoms);
@@ -401,6 +407,7 @@ void AtomT::sort_neighbor(const int num_atoms) {
       UCL_GERYON_EXIT;
     }
   #endif
+  ucl_print(dev_cell_id, 100);
 }
 
 #ifdef GPU_CAST
