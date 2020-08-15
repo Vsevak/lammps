@@ -407,7 +407,7 @@ void AtomT::sort_neighbor(const int num_atoms) {
       UCL_GERYON_EXIT;
     }
   #endif
-  ucl_print(dev_cell_id, 100);
+  //ucl_print(dev_cell_id, 100);
 }
 
 #ifdef GPU_CAST
