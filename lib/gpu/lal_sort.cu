@@ -17,15 +17,17 @@
 
 #define BLOCK 256
 
-__kernel void k_local(__global unsigned *restrict k,
-    __global int *restrict v,
-    __global unsigned *restrict out,
+__kernel void k_local(__global unsigned *k,
+    __global int *v,
+    __global unsigned *k_out,
+    __global unsigned *v_out,
     const int n,
-    __global unsigned *restrict prefix,
-    __global unsigned *restrict block,
+    __global unsigned *prefix,
+    __global unsigned *block,
     const int b) {
 
   __local unsigned int l_input[BLOCK];
+  __local          int l_input_value[BLOCK];
   __local unsigned int l_mask[BLOCK+1];
   __local unsigned int l_merged[BLOCK];
   __local unsigned int l_mask_sums[4];
@@ -40,12 +42,19 @@ __kernel void k_local(__global unsigned *restrict k,
     l_input[tid] = 0;
   }
   __syncthreads();
-  unsigned int thread_input = l_input[tid];
+  unsigned int input_key = l_input[tid];
+  // Read value from global to register
+  int input_value;
+  if (gid < n) {
+    input_value = v[gid];
+  } else {
+    input_value = 0;
+  }
   // Get two LSB
-  unsigned int get_two_bits = (thread_input >> b ) & 3;
+  unsigned int get_two_bits = (input_key >> b ) & 3;
 
   // 4-way radix
-  for(int i=0; i<4; ++i) {
+  for(unsigned int i = 0; i < 4; ++i) {
     l_mask[tid] = 0;
     if (tid == 0) {
       l_mask[BLOCK] = 0;
@@ -61,11 +70,15 @@ __kernel void k_local(__global unsigned *restrict k,
 
     int target = 0;
     unsigned int sum = 0;
-    int total = (int) log2f(BLOCK);
+    unsigned int total = (unsigned int) log2f(BLOCK);
     // Prefix-sum masks
-    for (int step = 0; step < total; ++step) {
+    for (unsigned int step = 0; step < total; ++step) {
       target = tid - (1 << step);
-      sum = l_mask[tid] + ((target >= 0) ? l_mask[target] : 0);
+      if (target >= 0) {
+        sum = l_mask[tid] + l_mask[target];
+      } else {
+        sum = l_mask[tid];
+      }
       __syncthreads();
       l_mask[tid] = sum;
       __syncthreads();
@@ -76,13 +89,13 @@ __kernel void k_local(__global unsigned *restrict k,
     __syncthreads();
     l_mask[tid + 1] = buffer;
     __syncthreads();
-    if (tid ==0) {
+    if (tid == 0) {
       l_mask[0] = 0;
-      sum = l_mask[BLOCK];
-      l_mask_sums[i] = sum;
+      unsigned int tsum = l_mask[BLOCK];
+      l_mask_sums[i] = tsum;
       int grid = GLOBAL_SIZE_X;
       grid /= BLOCK_SIZE_X;
-      block[i * grid  + BLOCK_ID_X]  = sum;
+      block[i * grid  + BLOCK_ID_X]  = tsum;
     }
     __syncthreads();
 
@@ -106,20 +119,42 @@ __kernel void k_local(__global unsigned *restrict k,
     unsigned int merged = l_merged[tid];
     unsigned int pos = merged + l_scan_mask_sums[get_two_bits];
     __syncthreads();
-    l_input[pos] = thread_input;
+    l_input[pos] = input_key;
+    l_input_value[pos] = input_value;
     l_merged[pos] = merged;
     __syncthreads();
 
     // Global output
     prefix[gid] = l_merged[tid];
-    out[gid] = l_input[tid];
+    k_out[gid] = l_input[tid];
+    v_out[gid] = l_input_value[tid];
   }
 }
 
-__kernel void k_global(__global int *restrict x, const int n){
-  int tid = BLOCK_ID_X*BLOCK_SIZE_X + THREAD_ID_X;
-  if (tid < n){
-    //x[tid] *= 100;
+__kernel void k_global(
+    __global unsigned int *key_out,
+    __global int *restrict value_out,
+    __global unsigned int *key_in,
+    __global int *restrict value_in,
+    const int n,
+    __global unsigned int *prefix,
+    __global unsigned int *scan_block,
+    const int b) {
+
+  int tid = THREAD_ID_X;
+  int gid = GLOBAL_ID_X;
+  int grid = GLOBAL_SIZE_X; grid /= BLOCK_SIZE_X;
+
+  if (gid < n) {
+    unsigned int k_in = key_in[gid];
+    unsigned int get_two_bits = (k_in >> b) & 3;
+    int v_in = value_in[gid];
+    unsigned int pref = prefix[gid];
+    unsigned int pos = scan_block[get_two_bits * grid + BLOCK_ID_X] + pref;
+    __syncthreads();
+    key_out[pos] = k_in;
+    value_out[pos] = v_in;
   }
+
 }
 
