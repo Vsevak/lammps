@@ -382,8 +382,8 @@ void AtomT::sort_neighbor(const int num_atoms) {
   printf("\n=======================\n");
   #ifdef USE_CUDPP
 
-  RadixSort<unsigned, int> sorter(&dev_cell_id, &dev_particle_id);
-  sorter.sort(num_atoms);
+  RadixSort<unsigned, int> sorter;
+  sorter.sort(dev_cell_id, dev_particle_id, num_atoms);
   ucl_print(dev_cell_id, 1000);
 
   CUDPPResult result = cudppSort(sort_plan, (unsigned *)dev_cell_id.begin(),

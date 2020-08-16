@@ -22,24 +22,20 @@ namespace LAMMPS_AL {
 
 extern Device<PRECISION,ACC_PRECISION> global_device;
 
-#define TSort RadixSort<ktyp,vtyp>;
 #define PRINT 0
 
 template<typename ktyp, typename vtyp>
 class RadixSort {
 public:
-  RadixSort(UCL_D_Vec<ktyp> *k, UCL_D_Vec<vtyp> *v);
-  ~RadixSort() {};
-  void sort(const int n);
-  void sort(UCL_D_Vec<ktyp> *k, UCL_D_Vec<vtyp> *v, const int n);
+  RadixSort();
+  ~RadixSort() = default;
+  void sort(UCL_D_Vec<ktyp> &k, UCL_D_Vec<vtyp> &v, const int n);
 
 private:
-  void sum_scan(const int n);
+  void sum_scan(UCL_D_Vec<ktyp> &key, UCL_D_Vec<vtyp> &value, const int n);
   void compile_kernels();
 
   UCL_Kernel k_local, k_global;
-  UCL_D_Vec<ktyp> *key;
-  UCL_D_Vec<vtyp> *value;
 
   UCL_D_Vec<ktyp> k_out;
   UCL_D_Vec<vtyp> v_out;
@@ -55,8 +51,7 @@ const int RadixSort<ktyp, vtyp>::block_size = 256;
 
 
 template<class ktyp, class vtyp>
-RadixSort<ktyp, vtyp>::RadixSort(UCL_D_Vec<ktyp> *k, UCL_D_Vec<vtyp> *v)
-    : key(k), value(v) {
+RadixSort<ktyp, vtyp>::RadixSort() {
 
   Device<PRECISION,ACC_PRECISION> *dev = &global_device;
   UCL_Device *d = dev->gpu;
@@ -70,17 +65,17 @@ RadixSort<ktyp, vtyp>::RadixSort(UCL_D_Vec<ktyp> *k, UCL_D_Vec<vtyp> *v)
 
 template<class ktyp, class vtyp>
 void RadixSort<ktyp, vtyp>::sort(
-    UCL_D_Vec<ktyp> *key, UCL_D_Vec<vtyp> *value, const int n) {
+    UCL_D_Vec<ktyp> &key, UCL_D_Vec<vtyp> &value, const int n) {
 
   Device<PRECISION,ACC_PRECISION> *d = &global_device;
   int t = static_cast<int>(std::ceil(static_cast<double>(n)/block_size));
-  if (key->cols() < n) {
+  if (key.cols() < n) {
     printf("\nWarning: RadixSort key is too short.\n");
-    key->resize(n);
+    key.resize(n);
   }
-  if (value->cols() < n) {
+  if (value.cols() < n) {
     printf("\nWarning: RadixSort value is too short.\n");
-    value->resize(n);
+    value.resize(n);
   }
   k_out.resize_ib(n);
   v_out.resize_ib(n);
@@ -99,7 +94,7 @@ void RadixSort<ktyp, vtyp>::sort(
   CUDPPResult result = cudppPlan(&scan_plan, scan_config, 4*t, 1, 0);
   for (int b = 0; b <= 30; b+=2) {
     k_local.set_size(t, block_size);
-    k_local.run(key, value, &k_out, &v_out, &n, &prefix, &block, &b);
+    k_local.run(&key, &value, &k_out, &v_out, &n, &prefix, &block, &b);
     if (PRINT && b==0) {
       printf("\n\n========KEY%d===============\n", b);
       ucl_print(k_out, block_size);
@@ -118,18 +113,14 @@ void RadixSort<ktyp, vtyp>::sort(
       printf("\n\n========OUT===============\n");
     }
     k_global.set_size(t, block_size);
-    k_global.run(key, value, &k_out, &v_out, &n, &prefix, &scan_block, &b);
+    k_global.run(&key, &value, &k_out, &v_out, &n, &prefix, &scan_block, &b);
   }
 }
 
 template<class ktyp, class vtyp>
-void RadixSort<ktyp, vtyp>::sort(const int n) {
-  sort(key, value, n);
-}
-
-template<class ktyp, class vtyp>
-void RadixSort<ktyp, vtyp>::sum_scan(const int n) {
-  key->zero(n);
+void RadixSort<ktyp, vtyp>::sum_scan(
+    UCL_D_Vec<ktyp> &key, UCL_D_Vec<vtyp> &value, const int n) {
+  key.zero(n);
   int scan_block_sz = block_size / 2;
   int grid = scan_block_sz * 2;
   int t = static_cast<int>(std::ceil(static_cast<double>(n)/grid));
@@ -142,11 +133,8 @@ void RadixSort<ktyp, vtyp>::compile_kernels() {
   Device<PRECISION,ACC_PRECISION> *d = &global_device;
   UCL_Program dev_program(*(d->gpu));
 
-  int success = dev_program.load_string(::sort, d->compile_string().c_str());
-//  if(!success) {
-//    printf("RadixSort program was not loaded.\n");
-//    return;
-//  }
+  dev_program.load_string(::sort, d->compile_string().c_str());
+
   k_local.set_function(dev_program,"k_local");
   k_global.set_function(dev_program, "k_global");
 }

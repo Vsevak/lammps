@@ -17,7 +17,8 @@
 
 #define BLOCK 256
 
-__kernel void k_local(__global unsigned *k,
+__kernel void k_local(
+    __global unsigned *k,
     __global int *v,
     __global unsigned *k_out,
     __global unsigned *v_out,
@@ -70,7 +71,7 @@ __kernel void k_local(__global unsigned *k,
 
     int target = 0;
     unsigned int sum = 0;
-    unsigned int total = (unsigned int) log2f(BLOCK);
+    int total = (int) log2f(BLOCK);
     // Prefix-sum masks
     for (unsigned int step = 0; step < total; ++step) {
       target = tid - (1 << step);
@@ -117,7 +118,7 @@ __kernel void k_local(__global unsigned *k,
 
   if (gid < n) {
     unsigned int merged = l_merged[tid];
-    unsigned int pos = merged + l_scan_mask_sums[get_two_bits];
+    int pos = merged + l_scan_mask_sums[get_two_bits];
     __syncthreads();
     l_input[pos] = input_key;
     l_input_value[pos] = input_value;
@@ -141,7 +142,6 @@ __kernel void k_global(
     __global unsigned int *scan_block,
     const int b) {
 
-  int tid = THREAD_ID_X;
   int gid = GLOBAL_ID_X;
   int grid = GLOBAL_SIZE_X; grid /= BLOCK_SIZE_X;
 
