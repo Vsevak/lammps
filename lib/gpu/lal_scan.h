@@ -27,12 +27,12 @@ public:
   Scan();
   ~Scan() = default;
   void scan(UCL_D_Vec<unsigned int> &input,
-      UCL_D_Vec<unsigned int> &output, const int n, const int iter);
+      UCL_D_Vec<unsigned int> &output, const int n);
 private:
   void compile_kernels();
   UCL_Device *gpu;
   UCL_Kernel k_scan, k_sum;
-  UCL_D_Vec<unsigned int> block_res;
+  //UCL_D_Vec<unsigned int> block_res;
 
   static const int block_size;
 };
@@ -44,7 +44,7 @@ const int Scan::block_size = 256;
 Scan::Scan() {
   Device<PRECISION,ACC_PRECISION> *dev = &global_device;
   gpu = dev->gpu;
-  block_res.alloc(8, *gpu);
+  //block_res.alloc(8, *gpu);
   compile_kernels();
 }
 
@@ -57,26 +57,20 @@ void Scan::compile_kernels() {
 }
 
 void Scan::scan(UCL_D_Vec<unsigned int> &input,
-    UCL_D_Vec<unsigned int> &output, const int n, const int iter = 0) {
+    UCL_D_Vec<unsigned int> &output, const int n) {
 
-  int scan_block_size = block_size / 2;
-  int block_elements = scan_block_size * 2;
-  int t = static_cast<int>(std::ceil(static_cast<double>(n)/block_elements));
-  block_res.resize_ib(t);
+  int t = static_cast<int>(std::ceil(static_cast<double>(n)/block_size));
+  UCL_D_Vec<unsigned int> block_res;
+  block_res.alloc( std::max(t, 8), *gpu);
 
   k_scan.set_size(t, block_size);
   k_scan.run(&input, &output, &n, &block_res);
 
-  UCL_D_Vec<unsigned int> tmp;
-  tmp.alloc( std::max(t, 8), *gpu);
   if (t > 1) {
-    if (t <= block_elements) {
-      k_scan.set_size(1, block_size);
-      k_scan.run(&block_res, &block_res, &n, &tmp);
-    } else {
-      // rec
-    }
-    k_sum.set_size(t, scan_block_size);
+    UCL_D_Vec<unsigned int> block_res_out;
+    block_res_out.alloc( std::max(t, 8), *gpu);
+    scan(block_res, block_res_out, t);
+    k_sum.set_size(t, block_size);
     k_sum.run(&block_res, &output, &n);
   }
 }

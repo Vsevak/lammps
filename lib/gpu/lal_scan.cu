@@ -63,5 +63,11 @@ __kernel void k_scan (
   }
 }
 
-__kernel void k_add () {}
+__kernel void k_add (
+    __global unsigned *input,
+    __global unsigned *output,
+    const int n) {
+
+
+}
 
