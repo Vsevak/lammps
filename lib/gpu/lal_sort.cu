@@ -14,7 +14,7 @@
 #include "lal_preprocessor.h"
 #include "lal_aux_fun1.h"
 #endif
-
+// This value must be consistent with lal_sort.h
 #define BLOCK 256
 
 __kernel void k_local(
@@ -54,7 +54,7 @@ __kernel void k_local(
   // Get two LSB
   unsigned int get_two_bits = (input_key >> b ) & 3;
 
-  // 4-way radix
+  // 4-way (2-bit) radix sort
   for(unsigned int i = 0; i < 4; ++i) {
     l_mask[tid] = 0;
     if (tid == 0) {
@@ -69,10 +69,12 @@ __kernel void k_local(
     }
     __syncthreads();
 
+    // Prefix-sum masks
+    // Hillis and Steele since it is just within shared memory and
+    // the number of threads is equal to the number of elements
     int target = 0;
     unsigned int sum = 0;
     int total = (int) log2f(BLOCK);
-    // Prefix-sum masks
     for (unsigned int step = 0; step < total; ++step) {
       target = tid - (1 << step);
       if (target >= 0) {
@@ -94,6 +96,7 @@ __kernel void k_local(
       l_mask[0] = 0;
       unsigned int tsum = l_mask[BLOCK];
       l_mask_sums[i] = tsum;
+      // gridDim.x expressed in terms of the Geryon
       int grid = GLOBAL_SIZE_X;
       grid /= BLOCK_SIZE_X;
       block[i * grid  + BLOCK_ID_X]  = tsum;
@@ -103,12 +106,13 @@ __kernel void k_local(
     if (out_eq_in && (gid < n)) {
       l_merged[tid] = l_mask[tid];
     }
+
     __syncthreads();
   }
 
-  // Serial scan resulting masks
   if (tid == 0) {
     unsigned int csum = 0;
+    // Serial scan the resulting masks
     for (int i = 0; i < 4; ++ i){
       l_scan_mask_sums[i] = csum;
       csum += l_mask_sums[i];
@@ -132,7 +136,7 @@ __kernel void k_local(
   }
 }
 
-__kernel void k_global(
+__kernel void k_global_scatter(
     __global unsigned int *key_out,
     __global int *restrict value_out,
     __global unsigned int *key_in,
@@ -143,6 +147,7 @@ __kernel void k_global(
     const int b) {
 
   int gid = GLOBAL_ID_X;
+  // gridDim.x expressed in terms of Geryon
   int grid = GLOBAL_SIZE_X; grid /= BLOCK_SIZE_X;
 
   if (gid < n) {
