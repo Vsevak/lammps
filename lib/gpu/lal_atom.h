@@ -45,6 +45,10 @@ using namespace ucl_cudadr;
 #include "cudpp.h"
 #endif
 
+#ifdef USE_LAMMPS_SORT
+#include "lal_sort.h"
+#endif
+
 #include "lal_precision.h"
 
 namespace LAMMPS_AL {
@@ -481,6 +485,10 @@ class Atom {
   #ifdef USE_CUDPP
   CUDPPConfiguration sort_config;
   CUDPPHandle sort_plan;
+  #endif
+
+  #ifdef USE_LAMMPS_SORT
+  RadixSort *sorter;
   #endif
 
   #ifdef USE_HIP_DEVICE_SORT

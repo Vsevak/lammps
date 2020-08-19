@@ -26,6 +26,8 @@ endif()
 file(GLOB GPU_LIB_SOURCES ${LAMMPS_LIB_SOURCE_DIR}/gpu/[^.]*.cpp)
 file(MAKE_DIRECTORY ${LAMMPS_LIB_BINARY_DIR}/gpu)
 
+option(SORT_OPT "Enable LAMMPS GPU Radix Sort" ON)
+
 if(GPU_API STREQUAL "CUDA")
   find_package(CUDA REQUIRED)
   find_program(BIN2C bin2c)
@@ -125,6 +127,10 @@ if(GPU_API STREQUAL "CUDA")
   if(CUDPP_OPT)
     target_include_directories(gpu PRIVATE ${LAMMPS_LIB_SOURCE_DIR}/gpu/cudpp_mini)
     target_compile_definitions(gpu PRIVATE -DUSE_CUDPP)
+  endif()
+  
+  if(SORT_OPT)
+  	target_compile_definitions(gpu PRIVATE -DUSE_LAMMPS_SORT)
   endif()
 
   target_link_libraries(lammps PRIVATE gpu)

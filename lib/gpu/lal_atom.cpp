@@ -97,6 +97,12 @@ bool AtomT::alloc(const int nall) {
   }
   #endif
 
+  #ifdef USE_LAMMPS_SORT
+  if (_gpu_nbor==1 && sorter==nullptr) {
+    sorter = new RadixSort(*dev);
+  }
+  #endif
+
   // ---------------------------  Device allocations
   int gpu_bytes=0;
   success=success && (x.alloc(_max_atoms*4,*dev,UCL_WRITE_ONLY,
@@ -232,6 +238,12 @@ bool AtomT::add_fields(const bool charge, const bool rot,
     }
     #endif
 
+    #ifdef USE_LAMMPS_SORT
+    if (!sorter) {
+      sorter = new RadixSort(*dev);
+    }
+    #endif
+
     success=success && (dev_particle_id.alloc(_max_atoms,*dev,
                                               UCL_READ_ONLY)==UCL_SUCCESS);
     gpu_bytes+=dev_particle_id.row_bytes();
@@ -319,12 +331,12 @@ void AtomT::clear_resize() {
   type_cast.clear();
   #endif
 
-  #ifdef USE_CUDPP
-  if (_gpu_nbor==1) cudppDestroyPlan(sort_plan);
-  #endif
-
-  #ifdef USE_HIP_DEVICE_SORT
   if (_gpu_nbor==1) {
+
+  #ifdef USE_CUDPP
+   cudppDestroyPlan(sort_plan);
+  #endif
+  #ifdef USE_HIP_DEVICE_SORT
     if(sort_out_keys)     hipFree(sort_out_keys);
     if(sort_out_values)   hipFree(sort_out_values);
     if(sort_temp_storage) hipFree(sort_temp_storage);
@@ -333,8 +345,15 @@ void AtomT::clear_resize() {
     sort_temp_storage = nullptr;
     sort_temp_storage_size = 0;
     sort_out_size = 0;
-  }
   #endif
+  #ifdef USE_LAMMPS_SORT
+  if (sorter) {
+    delete sorter;
+    sorter = nullptr;
+   }
+  #endif
+
+  }
 
   if (_gpu_nbor==2) {
     host_particle_id.clear();
@@ -378,14 +397,22 @@ double AtomT::host_memory_usage() const {
 // Sort arrays for neighbor list calculation
 template <class numtyp, class acctyp>
 void AtomT::sort_neighbor(const int num_atoms) {
+#if USE_LAMMPS_SORT
+  #if RADIX_PRINT
   ucl_print(dev_cell_id, 1000);
   printf("\n=======================\n");
-  #ifdef USE_CUDPP
-
-  RadixSort<unsigned, int> sorter;
-  sorter.sort(dev_cell_id, dev_particle_id, num_atoms);
+  #endif
+  if (sorter) {
+    sorter->sort(dev_cell_id, dev_particle_id, num_atoms);
+  } else {
+    printf("Error in LAMMPS GPU Sorter\n");
+  }
+  #if RADIX_PRINT
   ucl_print(dev_cell_id, 1000);
+  #endif
+#endif
 
+  #ifdef USE_CUDPP
   CUDPPResult result = cudppSort(sort_plan, (unsigned *)dev_cell_id.begin(),
                                  (int *)dev_particle_id.begin(),
                                  8*sizeof(unsigned), num_atoms);
