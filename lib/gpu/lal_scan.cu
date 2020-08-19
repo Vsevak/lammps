@@ -52,7 +52,7 @@ __kernel void k_scan (
   // Shift
   if (tid == 0) {
     sum = 0;
-    block[BLOCK_ID_X] = l_tmp[BLOCK];
+    block[BLOCK_ID_X] = l_tmp[BLOCK-1];
     //      l_mask_sums[i] = tsum;
     //      // gridDim.x expressed in terms of the Geryon
   } else {
@@ -64,10 +64,20 @@ __kernel void k_scan (
 }
 
 __kernel void k_add (
-    __global unsigned *input,
-    __global unsigned *output,
+    __global unsigned int *plus,
+    __global unsigned int *result,
     const int n) {
 
-
+  int tid = THREAD_ID_X;
+  int gid = GLOBAL_ID_X;
+  int block = BLOCK_ID_X;
+  __local unsigned int block_inc;
+  if (tid == 0) {
+    block_inc = plus[block];
+  }
+  __syncthreads();
+  if (gid < n) {
+    result[gid] += block_inc;
+  }
 }
 

@@ -42,7 +42,7 @@ void Scan::scan(UCL_D_Vec<unsigned int> &input,
     block_res_out.alloc( std::max(t, 8), gpu);
     scan(block_res, block_res_out, t);
     k_sum.set_size(t, block_size);
-    k_sum.run(&block_res, &output, &n);
+    k_sum.run(&block_res_out, &output, &n);
   }
 }
 
