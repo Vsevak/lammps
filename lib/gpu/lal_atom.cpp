@@ -99,7 +99,7 @@ bool AtomT::alloc(const int nall) {
 
   #ifdef USE_LAMMPS_SORT
   if (_gpu_nbor==1 && sorter==nullptr) {
-    sorter = new RadixSort(*dev);
+    sorter = new RadixSort(*dev, _ocl_compile_string);
   }
   #endif
 
@@ -240,7 +240,7 @@ bool AtomT::add_fields(const bool charge, const bool rot,
 
     #ifdef USE_LAMMPS_SORT
     if (!sorter) {
-      sorter = new RadixSort(*dev);
+      sorter = new RadixSort(*dev, _ocl_compile_string);
     }
     #endif
 
@@ -268,7 +268,8 @@ bool AtomT::add_fields(const bool charge, const bool rot,
 
 template <class numtyp, class acctyp>
 bool AtomT::init(const int nall, const bool charge, const bool rot,
-                 UCL_Device &devi, const int gpu_nbor, const bool bonds, const bool vel) {
+                 UCL_Device &devi, std::string const& ocl_compile,
+                 const int gpu_nbor, const bool bonds, const bool vel) {
   clear();
 
   bool success=true;
@@ -284,6 +285,7 @@ bool AtomT::init(const int nall, const bool charge, const bool rot,
   _vel=vel;
   _other=_charge || _rot || _vel;
   dev=&devi;
+  _ocl_compile_string = ocl_compile;
   _time_transfer=0;
 
   // Initialize atom and nbor data

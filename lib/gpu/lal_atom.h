@@ -76,7 +76,8 @@ class Atom {
     *        gpu_nbor 1 if neighboring will be performed on device
     *        gpu_nbor 2 if binning on host and neighboring on device **/
   bool init(const int nall, const bool charge, const bool rot,
-            UCL_Device &dev, const int gpu_nbor=0, const bool bonds=false,
+            UCL_Device &dev, std::string const& ocl_compile,
+            const int gpu_nbor=0, const bool bonds=false,
             const bool vel=false);
 
   /// Check if we have enough device storage and realloc if not
@@ -479,6 +480,7 @@ class Atom {
   int _max_atoms, _nall, _gpu_nbor;
   bool _host_view;
   double _time_cast, _time_transfer;
+  std::string _ocl_compile_string;
 
   double _max_gpu_bytes;
 
