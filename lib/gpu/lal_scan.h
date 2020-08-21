@@ -31,28 +31,24 @@ using namespace ucl_cudadr;
 #endif
 
 #include <string>
+#include <list>
+#include <vector>
 #include "lal_precision.h"
-#if defined(USE_OPENCL)
-#include "scan_cl.h"
-#elif defined(USE_CUDART)
-const char *scan=0;
-#else
-#include "scan_cubin.h"
-#endif
 
 namespace LAMMPS_AL {
 
 class Scan {
 public:
-  Scan(UCL_Device &d);
+  Scan(UCL_Device &d, std::string);
   ~Scan() = default;
   void scan(UCL_D_Vec<unsigned int> &input,
-      UCL_D_Vec<unsigned int> &output, const int n);
+      UCL_D_Vec<unsigned int> &output, const int n, const int iter=0);
 private:
   void compile_kernels();
   UCL_Device &gpu;
   UCL_Kernel k_scan, k_sum;
-  //UCL_D_Vec<unsigned int> block_res;
+  std::string ocl_param;
+  std::vector<UCL_D_Vec<unsigned int>> block_res, block_res_out;
 
   static const int block_size;
 };
