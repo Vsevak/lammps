@@ -19,10 +19,10 @@
 #define BLOCK 256
 
 __kernel void k_scan (
-    __global unsigned *input,
-    __global unsigned *output,
+    __global unsigned int *input,
+    __global unsigned int *output,
     const int n,
-    __global unsigned *block) {
+    __global unsigned int *block) {
 
   __local unsigned int l_tmp[BLOCK+1];
   int tid = THREAD_ID_X;
@@ -36,7 +36,7 @@ __kernel void k_scan (
   __syncthreads();
   int target = 0;
   unsigned int sum = 0;
-  int total = (int) log2f(BLOCK);
+  int total = (int) log2((float)BLOCK);
   for (unsigned int step = 0; step < total; ++step) {
     target = tid - (1 << step);
     if (target >= 0) {
@@ -48,6 +48,7 @@ __kernel void k_scan (
     l_tmp[tid] = sum;
     __syncthreads();
   }
+
 
   // Shift
   if (tid == 0) {

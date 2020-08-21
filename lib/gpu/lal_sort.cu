@@ -74,7 +74,7 @@ __kernel void k_local(
     // the number of threads is equal to the number of elements
     int target = 0;
     unsigned int sum = 0;
-    int total = (int) log2f(BLOCK);
+    unsigned int total = (unsigned int) log2((float)BLOCK);
     for (unsigned int step = 0; step < total; ++step) {
       target = tid - (1 << step);
       if (target >= 0) {
@@ -138,9 +138,9 @@ __kernel void k_local(
 
 __kernel void k_global_scatter(
     __global unsigned int *key_out,
-    __global int *restrict value_out,
+    __global int * value_out,
     __global unsigned int *key_in,
-    __global int *restrict value_in,
+    __global int * value_in,
     const int n,
     __global unsigned int *prefix,
     __global unsigned int *scan_block,
@@ -160,6 +160,38 @@ __kernel void k_global_scatter(
     key_out[pos] = k_in;
     value_out[pos] = v_in;
   }
+}
 
+__kernel void k_check(
+    __global int * value_in,
+    const int n,
+    __global int *results) {
+  int gid = GLOBAL_ID_X;
+  int tid = THREAD_ID_X;
+  __local int val[BLOCK+1];
+  __local int flag[BLOCK];
+  if (gid < n) {
+    val[tid] = value_in[gid];
+  }
+  if (tid == 0 && (gid + BLOCK) < n) {
+    val[BLOCK] = value_in[gid + BLOCK];
+  }
+  __syncthreads();
+  if(gid < n) {
+    flag[tid] = val[tid] > val[tid+1];
+  } else {
+    flag[tid] = 0;
+  }
+  __syncthreads();
+
+  for (unsigned int s = BLOCK/2; s > 0; s>>=1) {
+    if (tid < s) {
+      flag[tid] += flag[tid + s];
+    }
+    __syncthreads();
+  }
+  if (tid == 0) {
+    results[BLOCK_ID_X] = flag[0];
+  }
 }
 
