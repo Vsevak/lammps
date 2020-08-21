@@ -275,7 +275,8 @@ int DeviceT::init(Answer<numtyp,acctyp> &ans, const bool charge,
 
   if (_init_count==0) {
     // Initialize atom and nbor data
-    if (!atom.init(nall,charge,rot,*gpu,gpu_nbor,gpu_nbor>0 && maxspecial>0,vel))
+    if (!atom.init(nall,charge,rot,*gpu,_ocl_compile_string,
+        gpu_nbor,gpu_nbor>0 && maxspecial>0,vel))
       return -3;
 
     _data_in_estimate++;
@@ -313,7 +314,7 @@ int DeviceT::init(Answer<numtyp,acctyp> &ans, const int nlocal,
 
   if (_init_count==0) {
     // Initialize atom and nbor data
-    if (!atom.init(nall,true,false,*gpu,false,false))
+    if (!atom.init(nall,true,false,*gpu,_ocl_compile_string,false,false))
       return -3;
   } else
     if (!atom.add_fields(true,false,false,false))
