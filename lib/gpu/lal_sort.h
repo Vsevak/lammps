@@ -8,14 +8,6 @@
 #ifndef LAL_SORT_H_
 #define LAL_SORT_H_
 
-#include "lal_precision.h"
-#if defined(USE_OPENCL)
-#include "sort_cl.h"
-#elif defined(USE_CUDART)
-const char *sort=0;
-#else
-#include "sort_cubin.h"
-#endif
 #include "lal_scan.h"
 
 namespace LAMMPS_AL {
@@ -24,7 +16,7 @@ namespace LAMMPS_AL {
 
 class RadixSort {
 public:
-  RadixSort(UCL_Device &gpu);
+  RadixSort(UCL_Device &gpu, std::string);
   ~RadixSort() = default;
   void sort(UCL_D_Vec<unsigned int> &k, UCL_D_Vec<int> &v, const int n);
 private:
@@ -32,7 +24,8 @@ private:
   void compile_kernels();
 
   UCL_Device &gpu;
-  UCL_Kernel k_local, k_global_scatter;
+  UCL_Kernel k_local, k_global_scatter, k_check;
+  std::string ocl_param;
 
   Scan scanner;
   UCL_D_Vec<unsigned int> k_out;
@@ -40,6 +33,8 @@ private:
   UCL_D_Vec<unsigned int> prefix;
   UCL_D_Vec<unsigned int> block;
   UCL_D_Vec<unsigned int> scan_block;
+  UCL_Vector<int, int> f_sorted;
+
 
   static const int block_size;
 };

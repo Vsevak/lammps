@@ -205,8 +205,11 @@ elseif(GPU_API STREQUAL "OPENCL")
   add_library(gpu STATIC ${GPU_LIB_SOURCES})
   target_link_libraries(gpu PRIVATE OpenCL::OpenCL)
   target_include_directories(gpu PRIVATE ${CMAKE_CURRENT_BINARY_DIR}/gpu)
-  target_compile_definitions(gpu PRIVATE -D_${GPU_PREC_SETTING} -D${OCL_TUNE}_OCL -DMPI_GERYON -DUCL_NO_EXIT)
+  target_compile_definitions(gpu PRIVATE -D_${GPU_PREC_SETTING} -D${OCL_TUNE}_OCL -DMPI_GERYON -DUCL_DEBUG)
   target_compile_definitions(gpu PRIVATE -DUSE_OPENCL)
+  if(SORT_OPT)
+  	target_compile_definitions(gpu PRIVATE -DUSE_LAMMPS_SORT)
+  endif()
 
   target_link_libraries(lammps PRIVATE gpu)
 
