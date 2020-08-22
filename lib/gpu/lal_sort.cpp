@@ -25,6 +25,7 @@ const int RadixSort::block_size = 256;
 
 RadixSort::RadixSort(UCL_Device &d, std::string param) :
     gpu(d), ocl_param(param), scanner(d, param) {
+  printf("\nGPU Radix Sort enabled\n");
   k_out.alloc(16, gpu);
   v_out.alloc(16, gpu);
   prefix.alloc(16, gpu);
