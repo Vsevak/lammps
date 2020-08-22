@@ -26,8 +26,6 @@ endif()
 file(GLOB GPU_LIB_SOURCES ${LAMMPS_LIB_SOURCE_DIR}/gpu/[^.]*.cpp)
 file(MAKE_DIRECTORY ${LAMMPS_LIB_BINARY_DIR}/gpu)
 
-option(SORT_OPT "Enable LAMMPS GPU Radix Sort" ON)
-
 if(GPU_API STREQUAL "CUDA")
   find_package(CUDA REQUIRED)
   find_program(BIN2C bin2c)
@@ -141,6 +139,7 @@ if(GPU_API STREQUAL "CUDA")
   target_include_directories(nvc_get_devices PRIVATE ${CUDA_INCLUDE_DIRS})
 
 elseif(GPU_API STREQUAL "OPENCL")
+  option(SORT_OPT "Enable LAMMPS GPU Radix Sort" ON)
   if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
     # download and unpack support binaries for compilation of windows binaries.
     set(LAMMPS_THIRDPARTY_URL "https://download.lammps.org/thirdparty")
