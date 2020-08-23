@@ -16,6 +16,13 @@
 #if defined(NV_KERNEL) || defined(USE_HIP)
 
 #include "lal_aux_fun1.h"
+#ifndef _DOUBLE_DOUBLE
+_texture( pos_tex,float4);
+_texture( q_tex,float);
+#else
+_texture_2d( pos_tex,int4);
+_texture( q_tex,int2);
+#endif
 #ifdef LAMMPS_SMALLBIG
 #define tagint int
 #endif
@@ -26,17 +33,19 @@
 #ifdef LAMMPS_SMALLSMALL
 #define tagint int
 #endif
-#ifndef _DOUBLE_DOUBLE
-_texture( pos_tex,float4);
-_texture( q_tex,float);
-#else
-_texture_2d( pos_tex,int4);
-_texture( q_tex,int2);
-#endif
 
 #else
 #define pos_tex x_
 #define q_tex q_
+#ifdef LAMMPS_SMALLBIG
+#define tagint int
+#endif
+#ifdef LAMMPS_BIGBIG
+#define tagint long long int
+#endif
+#ifdef LAMMPS_SMALLSMALL
+#define tagint int
+#endif
 #endif
 
 ucl_inline int atom_mapping(const __global int *map, tagint glob) {
