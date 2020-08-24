@@ -27,34 +27,34 @@
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline numtyp vec3_dot(const numtyp x[3], const numtyp y[3])
+ucl_inline numtyp vec3_dot(const __private numtyp x[3], const  __private numtyp y[3])
 {
   return (x[0]*y[0] + x[1]*y[1] + x[2]*y[2]);
 }
 
-ucl_inline void vec3_add(const numtyp x[3], const numtyp y[3], numtyp z[3])
+ucl_inline void vec3_add(const  __private numtyp x[3], const  __private numtyp y[3], __private numtyp z[3])
 {
   z[0] = x[0]+y[0]; z[1] = x[1]+y[1]; z[2] = x[2]+y[2];
 }
 
-ucl_inline void vec3_scale(const numtyp k, const numtyp x[3], numtyp y[3])
+ucl_inline void vec3_scale(const __private numtyp k, const __private numtyp x[3], numtyp __private y[3])
 {
   y[0] = k*x[0]; y[1] = k*x[1]; y[2] = k*x[2];
 }
 
-ucl_inline void vec3_scaleadd(const numtyp k, const numtyp x[3],
-                              const numtyp y[3], numtyp z[3])
+ucl_inline void vec3_scaleadd(const  __private numtyp k, const __private numtyp x[3],
+                              const __private numtyp y[3], __private numtyp z[3])
 {
   z[0] = k*x[0]+y[0]; z[1] = k*x[1]+y[1]; z[2] = k*x[2]+y[2];
 }
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline numtyp ters_gijk(const numtyp costheta,
-                            const numtyp param_c,
-                            const numtyp param_d,
-                            const numtyp param_h,
-                            const numtyp param_gamma)
+ucl_inline numtyp ters_gijk(const  __private numtyp costheta,
+                            const  __private numtyp param_c,
+                            const  __private numtyp param_d,
+                            const  __private numtyp param_h,
+                            const  __private numtyp param_gamma)
 {
   const numtyp ters_c = param_c * param_c;
   const numtyp ters_d = param_d * param_d;
@@ -65,11 +65,11 @@ ucl_inline numtyp ters_gijk(const numtyp costheta,
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline numtyp ters_gijk_d(const numtyp costheta,
-                              const numtyp param_c,
-                              const numtyp param_d,
-                              const numtyp param_h,
-                              const numtyp param_gamma)
+ucl_inline numtyp ters_gijk_d(const  __private numtyp costheta,
+                              const  __private numtyp param_c,
+                              const  __private numtyp param_d,
+                              const  __private numtyp param_h,
+                              const  __private numtyp param_gamma)
 {
   const numtyp ters_c = param_c * param_c;
   const numtyp ters_d = param_d * param_d;
@@ -81,10 +81,10 @@ ucl_inline numtyp ters_gijk_d(const numtyp costheta,
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline void costheta_d(const numtyp rij_hat[3],
-                           const numtyp rij,
-                           const numtyp rik_hat[3],
-                           const numtyp rik,
+ucl_inline void costheta_d(const  __private numtyp rij_hat[3],
+                           const  __private numtyp rij,
+                           const  __private numtyp rik_hat[3],
+                           const  __private numtyp rik,
                            numtyp *dri,
                            numtyp *drj,
                            numtyp *drk)
@@ -103,9 +103,9 @@ ucl_inline void costheta_d(const numtyp rij_hat[3],
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline numtyp ters_fc(const numtyp r,
-                          const numtyp param_bigr,
-                          const numtyp param_bigd)
+ucl_inline numtyp ters_fc(const  __private numtyp r,
+                          const  __private numtyp param_bigr,
+                          const  __private numtyp param_bigd)
 {
   if (r < param_bigr-param_bigd) return (numtyp)1.0;
   if (r > param_bigr+param_bigd) return (numtyp)0.0;
@@ -114,9 +114,9 @@ ucl_inline numtyp ters_fc(const numtyp r,
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline numtyp ters_fc_d(const numtyp r,
-                            const numtyp param_bigr,
-                            const numtyp param_bigd)
+ucl_inline numtyp ters_fc_d(const  __private numtyp r,
+                            const  __private numtyp param_bigr,
+                            const  __private numtyp param_bigd)
 {
   if (r < param_bigr-param_bigd) return (numtyp)0.0;
   if (r > param_bigr+param_bigd) return (numtyp)0.0;
@@ -125,16 +125,16 @@ ucl_inline numtyp ters_fc_d(const numtyp r,
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline numtyp F_fermi(const numtyp r, const numtyp param_ZBLcut,
-                          const numtyp param_ZBLexpscale)
+ucl_inline numtyp F_fermi(const  __private numtyp r, const  __private numtyp param_ZBLcut,
+                          const  __private numtyp param_ZBLexpscale)
 {
   return ucl_recip((numtyp)1.0+ucl_exp(-param_ZBLexpscale*(r-param_ZBLcut)));
 }
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline numtyp F_fermi_d(const numtyp r, const numtyp param_ZBLcut,
-                            const numtyp param_ZBLexpscale)
+ucl_inline numtyp F_fermi_d(const  __private numtyp r, const  __private numtyp param_ZBLcut,
+                            const  __private numtyp param_ZBLexpscale)
 {
   numtyp a = ucl_exp(-param_ZBLexpscale*(r-param_ZBLcut));
   numtyp b = (numtyp)1.0 + a;
@@ -143,13 +143,13 @@ ucl_inline numtyp F_fermi_d(const numtyp r, const numtyp param_ZBLcut,
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline numtyp ters_fa(const numtyp r,
-                          const numtyp param_bigb,
-                          const numtyp param_bigr,
-                          const numtyp param_bigd,
-                          const numtyp param_lam2,
-                          const numtyp param_ZBLcut,
-                          const numtyp param_ZBLexpscale)
+ucl_inline numtyp ters_fa(const  __private numtyp r,
+                          const  __private numtyp param_bigb,
+                          const  __private numtyp param_bigr,
+                          const  __private numtyp param_bigd,
+                          const  __private numtyp param_lam2,
+                          const  __private numtyp param_ZBLcut,
+                          const  __private numtyp param_ZBLexpscale)
 {
   if (r > param_bigr + param_bigd) return (numtyp)0.0;
   return -param_bigb * ucl_exp(-param_lam2 * r) *
@@ -158,13 +158,13 @@ ucl_inline numtyp ters_fa(const numtyp r,
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline numtyp ters_fa_d(const numtyp r,
-                            const numtyp param_bigb,
-                            const numtyp param_bigr,
-                            const numtyp param_bigd,
-                            const numtyp param_lam2,
-                            const numtyp param_ZBLcut,
-                            const numtyp param_ZBLexpscale)
+ucl_inline numtyp ters_fa_d(const  __private numtyp r,
+                            const  __private numtyp param_bigb,
+                            const  __private numtyp param_bigr,
+                            const  __private numtyp param_bigd,
+                            const  __private numtyp param_lam2,
+                            const  __private numtyp param_ZBLcut,
+                            const  __private numtyp param_ZBLexpscale)
 {
   if (r > param_bigr + param_bigd) return (numtyp)0.0;
   numtyp f = F_fermi(r,param_ZBLcut,param_ZBLexpscale);
@@ -176,13 +176,13 @@ ucl_inline numtyp ters_fa_d(const numtyp r,
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline numtyp ters_bij(const numtyp zeta,
-                           const numtyp param_beta,
-                           const numtyp param_powern,
-                           const numtyp param_c1,
-                           const numtyp param_c2,
-                           const numtyp param_c3,
-                           const numtyp param_c4)
+ucl_inline numtyp ters_bij(const  __private numtyp zeta,
+                           const  __private numtyp param_beta,
+                           const  __private numtyp param_powern,
+                           const  __private numtyp param_c1,
+                           const  __private numtyp param_c2,
+                           const  __private numtyp param_c3,
+                           const  __private numtyp param_c4)
 {
   numtyp tmp = param_beta * zeta;
   if (tmp > param_c1) return ucl_rsqrt(tmp);
@@ -198,13 +198,13 @@ ucl_inline numtyp ters_bij(const numtyp zeta,
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline numtyp ters_bij_d(const numtyp zeta,
-                             const numtyp param_beta,
-                             const numtyp param_powern,
-                             const numtyp param_c1,
-                             const numtyp param_c2,
-                             const numtyp param_c3,
-                             const numtyp param_c4)
+ucl_inline numtyp ters_bij_d(const  __private numtyp zeta,
+                             const  __private numtyp param_beta,
+                             const  __private numtyp param_powern,
+                             const  __private numtyp param_c1,
+                             const  __private numtyp param_c2,
+                             const  __private numtyp param_c3,
+                             const  __private numtyp param_c4)
 {
   numtyp tmp = param_beta * zeta;
   if (tmp > param_c1)
@@ -226,22 +226,22 @@ ucl_inline numtyp ters_bij_d(const numtyp zeta,
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline void ters_zetaterm_d(const numtyp prefactor,
-                                const numtyp rij_hat[3],
-                                const numtyp rij,
-                                const numtyp rik_hat[3],
-                                const numtyp rik,
-                                const numtyp param_bigr,
-                                const numtyp param_bigd,
-                                const numtyp param_powermint,
-                                const numtyp param_lam3,
-                                const numtyp param_c,
-                                const numtyp param_d,
-                                const numtyp param_h,
-                                const numtyp param_gamma,
-                                numtyp dri[3],
-                                numtyp drj[3],
-                                numtyp drk[3])
+ucl_inline void ters_zetaterm_d(const  __private numtyp prefactor,
+                                const  __private numtyp rij_hat[3],
+                                const  __private numtyp rij,
+                                const  __private numtyp rik_hat[3],
+                                const  __private numtyp rik,
+                                const  __private numtyp param_bigr,
+                                const  __private numtyp param_bigd,
+                                const  __private numtyp param_powermint,
+                                const  __private numtyp param_lam3,
+                                const  __private numtyp param_c,
+                                const  __private numtyp param_d,
+                                const  __private numtyp param_h,
+                                const  __private numtyp param_gamma,
+                                __private numtyp dri[3],
+                                __private numtyp drj[3],
+                                __private numtyp drk[3])
 {
   numtyp gijk,gijk_d,ex_delr,ex_delr_d,fc,dfc,cos_theta,tmp;
   numtyp dcosdri[3],dcosdrj[3],dcosdrk[3];
@@ -296,20 +296,20 @@ ucl_inline void ters_zetaterm_d(const numtyp prefactor,
   vec3_scale(prefactor,drk,drk);
 }
 
-ucl_inline void ters_zetaterm_d_fi(const numtyp prefactor,
-                                   const numtyp rij_hat[3],
-                                   const numtyp rij,
-                                   const numtyp rik_hat[3],
-                                   const numtyp rik,
-                                   const numtyp param_bigr,
-                                   const numtyp param_bigd,
-                                   const numtyp param_powermint,
-                                   const numtyp param_lam3,
-                                   const numtyp param_c,
-                                   const numtyp param_d,
-                                   const numtyp param_h,
-                                   const numtyp param_gamma,
-                                   numtyp dri[3])
+ucl_inline void ters_zetaterm_d_fi(const  __private numtyp prefactor,
+                                   const  __private numtyp rij_hat[3],
+                                   const  __private numtyp rij,
+                                   const  __private numtyp rik_hat[3],
+                                   const  __private numtyp rik,
+                                   const  __private numtyp param_bigr,
+                                   const  __private numtyp param_bigd,
+                                   const  __private numtyp param_powermint,
+                                   const  __private numtyp param_lam3,
+                                   const  __private numtyp param_c,
+                                   const  __private numtyp param_d,
+                                   const  __private numtyp param_h,
+                                   const  __private numtyp param_gamma,
+                                   __private numtyp dri[3])
 {
   numtyp gijk,gijk_d,ex_delr,ex_delr_d,fc,dfc,cos_theta,tmp;
   numtyp dcosdri[3],dcosdrj[3],dcosdrk[3];
@@ -346,20 +346,20 @@ ucl_inline void ters_zetaterm_d_fi(const numtyp prefactor,
   vec3_scale(prefactor,dri,dri);
 }
 
-ucl_inline void ters_zetaterm_d_fj(const numtyp prefactor,
-                                   const numtyp rij_hat[3],
-                                   const numtyp rij,
-                                   const numtyp rik_hat[3],
-                                   const numtyp rik,
-                                   const numtyp param_bigr,
-                                   const numtyp param_bigd,
-                                   const numtyp param_powermint,
-                                   const numtyp param_lam3,
-                                   const numtyp param_c,
-                                   const numtyp param_d,
-                                   const numtyp param_h,
-                                   const numtyp param_gamma,
-                                   numtyp drj[3])
+ucl_inline void ters_zetaterm_d_fj(const  __private numtyp prefactor,
+                                   const  __private numtyp rij_hat[3],
+                                   const  __private numtyp rij,
+                                   const  __private numtyp rik_hat[3],
+                                   const  __private numtyp rik,
+                                   const  __private numtyp param_bigr,
+                                   const  __private numtyp param_bigd,
+                                   const  __private numtyp param_powermint,
+                                   const  __private numtyp param_lam3,
+                                   const  __private numtyp param_c,
+                                   const  __private numtyp param_d,
+                                   const  __private numtyp param_h,
+                                   const  __private numtyp param_gamma,
+                                   __private numtyp drj[3])
 {
   numtyp gijk,gijk_d,ex_delr,ex_delr_d,fc,cos_theta,tmp;
   numtyp dcosdri[3],dcosdrj[3],dcosdrk[3];
@@ -392,20 +392,20 @@ ucl_inline void ters_zetaterm_d_fj(const numtyp prefactor,
   vec3_scale(prefactor,drj,drj);
 }
 
-ucl_inline void ters_zetaterm_d_fk(const numtyp prefactor,
-                                   const numtyp rij_hat[3],
-                                   const numtyp rij,
-                                   const numtyp rik_hat[3],
-                                   const numtyp rik,
-                                   const numtyp param_bigr,
-                                   const numtyp param_bigd,
-                                   const numtyp param_powermint,
-                                   const numtyp param_lam3,
-                                   const numtyp param_c,
-                                   const numtyp param_d,
-                                   const numtyp param_h,
-                                   const numtyp param_gamma,
-                                   numtyp drk[3])
+ucl_inline void ters_zetaterm_d_fk(const  __private numtyp prefactor,
+                                   const  __private numtyp rij_hat[3],
+                                   const  __private numtyp rij,
+                                   const  __private numtyp rik_hat[3],
+                                   const  __private numtyp rik,
+                                   const  __private numtyp param_bigr,
+                                   const  __private numtyp param_bigd,
+                                   const  __private numtyp param_powermint,
+                                   const  __private numtyp param_lam3,
+                                   const  __private numtyp param_c,
+                                   const  __private numtyp param_d,
+                                   const  __private numtyp param_h,
+                                   const  __private numtyp param_gamma,
+                                   __private numtyp drk[3])
 {
   numtyp gijk,gijk_d,ex_delr,ex_delr_d,fc,dfc,cos_theta,tmp;
   numtyp dcosdri[3],dcosdrj[3],dcosdrk[3];
@@ -443,20 +443,20 @@ ucl_inline void ters_zetaterm_d_fk(const numtyp prefactor,
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline void repulsive(const numtyp param_bigr,
-                          const numtyp param_bigd,
-                          const numtyp param_lam1,
-                          const numtyp param_biga,
-                          const numtyp param_Z_i,
-                          const numtyp param_Z_j,
-                          const numtyp param_ZBLcut,
-                          const numtyp param_ZBLexpscale,
-                          const numtyp global_e,
-                          const numtyp global_a_0,
-                          const numtyp global_epsilon_0,
-                          const numtyp rsq,
-                          const int eflag,
-                          numtyp *ans)
+ucl_inline void repulsive(const  __private numtyp param_bigr,
+                          const  __private numtyp param_bigd,
+                          const  __private numtyp param_lam1,
+                          const  __private numtyp param_biga,
+                          const  __private numtyp param_Z_i,
+                          const  __private numtyp param_Z_j,
+                          const  __private numtyp param_ZBLcut,
+                          const  __private numtyp param_ZBLexpscale,
+                          const  __private numtyp global_e,
+                          const  __private numtyp global_a_0,
+                          const  __private numtyp global_epsilon_0,
+                          const  __private numtyp rsq,
+                          const __private int eflag,
+                          __private numtyp *ans)
 {
   numtyp r,tmp_fc,tmp_fc_d,tmp_exp;
 
@@ -512,18 +512,18 @@ ucl_inline void repulsive(const numtyp param_bigr,
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline numtyp zeta(const numtyp param_powermint,
-                       const numtyp param_lam3,
-                       const numtyp param_bigr,
-                       const numtyp param_bigd,
-                       const numtyp param_c,
-                       const numtyp param_d,
-                       const numtyp param_h,
-                       const numtyp param_gamma,
-                       const numtyp rsqij,
-                       const numtyp rsqik,
-                       const numtyp4 delrij,
-                       const numtyp4 delrik)
+ucl_inline numtyp zeta(const  __private numtyp param_powermint,
+                       const  __private numtyp param_lam3,
+                       const  __private numtyp param_bigr,
+                       const  __private numtyp param_bigd,
+                       const  __private numtyp param_c,
+                       const  __private numtyp param_d,
+                       const  __private numtyp param_h,
+                       const  __private numtyp param_gamma,
+                       const  __private numtyp rsqij,
+                       const  __private numtyp rsqik,
+                       const  __private numtyp4 delrij,
+                       const  __private numtyp4 delrik)
 {
   numtyp rij,rik,costheta,arg,ex_delr;
 
@@ -546,22 +546,22 @@ ucl_inline numtyp zeta(const numtyp param_powermint,
 
 /* ---------------------------------------------------------------------- */
 
-ucl_inline void force_zeta(const numtyp param_bigb,
-                           const numtyp param_bigr,
-                           const numtyp param_bigd,
-                           const numtyp param_lam2,
-                           const numtyp param_beta,
-                           const numtyp param_powern,
-                           const numtyp param_c1,
-                           const numtyp param_c2,
-                           const numtyp param_c3,
-                           const numtyp param_c4,
-                           const numtyp param_ZBLcut,
-                           const numtyp param_ZBLexpscale,
-                           const numtyp rsq,
-                           const numtyp zeta_ij,
-                           const int eflag,
-                           numtyp fpfeng[4])
+ucl_inline void force_zeta(const  __private numtyp param_bigb,
+                           const  __private numtyp param_bigr,
+                           const  __private numtyp param_bigd,
+                           const  __private numtyp param_lam2,
+                           const  __private numtyp param_beta,
+                           const  __private numtyp param_powern,
+                           const  __private numtyp param_c1,
+                           const  __private numtyp param_c2,
+                           const  __private numtyp param_c3,
+                           const  __private numtyp param_c4,
+                           const  __private numtyp param_ZBLcut,
+                           const  __private numtyp param_ZBLexpscale,
+                           const  __private numtyp rsq,
+                           const  __private numtyp zeta_ij,
+                           const __private int eflag,
+                           __private numtyp fpfeng[4])
 {
   numtyp r,fa,fa_d,bij;
 
@@ -582,24 +582,24 @@ ucl_inline void force_zeta(const numtyp param_bigb,
    use param_ijk cutoff for rik test
 ------------------------------------------------------------------------- */
 
-ucl_inline void attractive(const numtyp param_bigr,
-                           const numtyp param_bigd,
-                           const numtyp param_powermint,
-                           const numtyp param_lam3,
-                           const numtyp param_c,
-                           const numtyp param_d,
-                           const numtyp param_h,
-                           const numtyp param_gamma,
-                           const numtyp prefactor,
-                           const numtyp rij,
-                           const numtyp rijinv,
-                           const numtyp rik,
-                           const numtyp rikinv,
-                           const numtyp delrij[3],
-                           const numtyp delrik[3],
-                           numtyp fi[3],
-                           numtyp fj[3],
-                           numtyp fk[3])
+ucl_inline void attractive(const __private numtyp param_bigr,
+                           const __private numtyp param_bigd,
+                           const __private numtyp param_powermint,
+                           const __private numtyp param_lam3,
+                           const __private numtyp param_c,
+                           const __private numtyp param_d,
+                           const __private numtyp param_h,
+                           const __private numtyp param_gamma,
+                           const __private numtyp prefactor,
+                           const __private numtyp rij,
+                           const __private numtyp rijinv,
+                           const __private numtyp rik,
+                           const __private numtyp rikinv,
+                           const __private numtyp delrij[3],
+                           const __private numtyp delrik[3],
+                           __private numtyp fi[3],
+                           __private numtyp fj[3],
+                           __private numtyp fk[3])
 {
   numtyp rij_hat[3],rik_hat[3];
   vec3_scale(rijinv,delrij,rij_hat);
@@ -609,22 +609,22 @@ ucl_inline void attractive(const numtyp param_bigr,
                   param_c, param_d, param_h, param_gamma, fi, fj, fk);
 }
 
-ucl_inline void attractive_fi(const numtyp param_bigr,
-                              const numtyp param_bigd,
-                              const numtyp param_powermint,
-                              const numtyp param_lam3,
-                              const numtyp param_c,
-                              const numtyp param_d,
-                              const numtyp param_h,
-                              const numtyp param_gamma,
-                              const numtyp prefactor,
-                              const numtyp rij,
-                              const numtyp rijinv,
-                              const numtyp rik,
-                              const numtyp rikinv,
-                              const numtyp delrij[3],
-                              const numtyp delrik[3],
-                              numtyp fi[3])
+ucl_inline void attractive_fi(const  __private numtyp param_bigr,
+                              const  __private numtyp param_bigd,
+                              const  __private numtyp param_powermint,
+                              const  __private numtyp param_lam3,
+                              const  __private numtyp param_c,
+                              const  __private numtyp param_d,
+                              const  __private numtyp param_h,
+                              const  __private numtyp param_gamma,
+                              const  __private numtyp prefactor,
+                              const  __private numtyp rij,
+                              const  __private numtyp rijinv,
+                              const  __private numtyp rik,
+                              const  __private numtyp rikinv,
+                              const  __private numtyp delrij[3],
+                              const  __private numtyp delrik[3],
+                              __private numtyp fi[3])
 {
   numtyp rij_hat[3],rik_hat[3];
   vec3_scale(rijinv,delrij,rij_hat);
@@ -634,22 +634,22 @@ ucl_inline void attractive_fi(const numtyp param_bigr,
                   param_c, param_d, param_h, param_gamma, fi);
 }
 
-ucl_inline void attractive_fj(const numtyp param_bigr,
-                              const numtyp param_bigd,
-                              const numtyp param_powermint,
-                              const numtyp param_lam3,
-                              const numtyp param_c,
-                              const numtyp param_d,
-                              const numtyp param_h,
-                              const numtyp param_gamma,
-                              const numtyp prefactor,
-                              const numtyp rij,
-                              const numtyp rijinv,
-                              const numtyp rik,
-                              const numtyp rikinv,
-                              const numtyp delrij[3],
-                              const numtyp delrik[3],
-                              numtyp fj[3])
+ucl_inline void attractive_fj(const  __private numtyp param_bigr,
+                              const  __private numtyp param_bigd,
+                              const  __private numtyp param_powermint,
+                              const  __private numtyp param_lam3,
+                              const  __private numtyp param_c,
+                              const  __private numtyp param_d,
+                              const  __private numtyp param_h,
+                              const  __private numtyp param_gamma,
+                              const  __private numtyp prefactor,
+                              const  __private numtyp rij,
+                              const  __private numtyp rijinv,
+                              const  __private numtyp rik,
+                              const  __private numtyp rikinv,
+                              const  __private numtyp delrij[3],
+                              const  __private numtyp delrik[3],
+                              __private numtyp fj[3])
 {
   numtyp rij_hat[3],rik_hat[3];
   vec3_scale(rijinv,delrij,rij_hat);
@@ -659,22 +659,22 @@ ucl_inline void attractive_fj(const numtyp param_bigr,
                      param_c, param_d, param_h, param_gamma, fj);
 }
 
-ucl_inline void attractive_fk(const numtyp param_bigr,
-                              const numtyp param_bigd,
-                              const numtyp param_powermint,
-                              const numtyp param_lam3,
-                              const numtyp param_c,
-                              const numtyp param_d,
-                              const numtyp param_h,
-                              const numtyp param_gamma,
-                              const numtyp prefactor,
-                              const numtyp rij,
-                              const numtyp rijinv,
-                              const numtyp rik,
-                              const numtyp rikinv,
-                              const numtyp delrij[3],
-                              const numtyp delrik[3],
-                              numtyp fk[3])
+ucl_inline void attractive_fk(const  __private numtyp param_bigr,
+                              const  __private numtyp param_bigd,
+                              const  __private numtyp param_powermint,
+                              const  __private numtyp param_lam3,
+                              const  __private numtyp param_c,
+                              const  __private numtyp param_d,
+                              const  __private numtyp param_h,
+                              const  __private numtyp param_gamma,
+                              const  __private numtyp prefactor,
+                              const  __private numtyp rij,
+                              const  __private numtyp rijinv,
+                              const  __private numtyp rik,
+                              const  __private numtyp rikinv,
+                              const  __private numtyp delrij[3],
+                              const  __private numtyp delrik[3],
+                              __private numtyp fk[3])
 {
   numtyp rij_hat[3],rik_hat[3];
   vec3_scale(rijinv,delrij,rij_hat);

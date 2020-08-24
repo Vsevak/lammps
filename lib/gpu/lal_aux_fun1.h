@@ -45,32 +45,31 @@
 #define store_answers(f, energy, virial, ii, inum, tid, t_per_atom, offset, \
                       eflag, vflag, ans, engv)                              \
   if (t_per_atom>1) {                                                       \
-    __local acctyp red_acc[6][BLOCK_PAIR];                                  \
-    red_acc[0][tid]=f.x;                                                    \
-    red_acc[1][tid]=f.y;                                                    \
-    red_acc[2][tid]=f.z;                                                    \
-    red_acc[3][tid]=energy;                                                 \
+    store_answers_acc[0][tid]=f.x;                                          \
+    store_answers_acc[1][tid]=f.y;                                          \
+    store_answers_acc[2][tid]=f.z;                                          \
+    store_answers_acc[3][tid]=energy;                                       \
     for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
       if (offset < s) {                                                     \
         for (int r=0; r<4; r++)                                             \
-          red_acc[r][tid] += red_acc[r][tid+s];                             \
+          store_answers_acc[r][tid] += store_answers_acc[r][tid+s];         \
       }                                                                     \
     }                                                                       \
-    f.x=red_acc[0][tid];                                                    \
-    f.y=red_acc[1][tid];                                                    \
-    f.z=red_acc[2][tid];                                                    \
-    energy=red_acc[3][tid];                                                 \
+    f.x=store_answers_acc[0][tid];                                          \
+    f.y=store_answers_acc[1][tid];                                          \
+    f.z=store_answers_acc[2][tid];                                          \
+    energy=store_answers_acc[3][tid];                                       \
     if (vflag>0) {                                                          \
       for (int r=0; r<6; r++)                                               \
-        red_acc[r][tid]=virial[r];                                          \
+        store_answers_acc[r][tid]=virial[r];                                \
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                       \
         if (offset < s) {                                                   \
           for (int r=0; r<6; r++)                                           \
-            red_acc[r][tid] += red_acc[r][tid+s];                           \
+            store_answers_acc[r][tid] += store_answers_acc[r][tid+s];       \
         }                                                                   \
       }                                                                     \
       for (int r=0; r<6; r++)                                               \
-        virial[r]=red_acc[r][tid];                                          \
+        virial[r]=store_answers_acc[r][tid];                                \
     }                                                                       \
   }                                                                         \
   if (offset==0) {                                                          \
