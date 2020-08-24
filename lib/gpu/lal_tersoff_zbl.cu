@@ -62,31 +62,32 @@ _texture( ts6_tex,int4);
 #define store_answers_p(f, energy, virial, ii, inum, tid, t_per_atom,       \
                         offset, eflag, vflag, ans, engv)                    \
   if (t_per_atom>1) {                                                       \
-    store_answers_p_acc[0][tid]=f.x;                                        \
-    store_answers_p_acc[1][tid]=f.y;                                        \
-    store_answers_p_acc[2][tid]=f.z;                                        \
-    store_answers_p_acc[3][tid]=energy;                                     \
+    __local acctyp red_acc[6][BLOCK_PAIR];                                  \
+    red_acc[0][tid]=f.x;                                                    \
+    red_acc[1][tid]=f.y;                                                    \
+    red_acc[2][tid]=f.z;                                                    \
+    red_acc[3][tid]=energy;                                                 \
     for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
       if (offset < s) {                                                     \
         for (int r=0; r<4; r++)                                             \
-          store_answers_p_acc[r][tid] += store_answers_p_acc[r][tid+s];     \
+          red_acc[r][tid] += red_acc[r][tid+s];                             \
       }                                                                     \
     }                                                                       \
-    f.x=store_answers_p_acc[0][tid];                                        \
-    f.y=store_answers_p_acc[1][tid];                                        \
-    f.z=store_answers_p_acc[2][tid];                                        \
-    energy=store_answers_p_acc[3][tid];                                     \
+    f.x=red_acc[0][tid];                                                    \
+    f.y=red_acc[1][tid];                                                    \
+    f.z=red_acc[2][tid];                                                    \
+    energy=red_acc[3][tid];                                                 \
     if (vflag>0) {                                                          \
       for (int r=0; r<6; r++)                                               \
-        store_answers_p_acc[r][tid]=virial[r];                              \
+        red_acc[r][tid]=virial[r];                                          \
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                       \
         if (offset < s) {                                                   \
           for (int r=0; r<6; r++)                                           \
-            store_answers_p_acc[r][tid] += store_answers_p_acc[r][tid+s];   \
+            red_acc[r][tid] += red_acc[r][tid+s];                           \
         }                                                                   \
       }                                                                     \
       for (int r=0; r<6; r++)                                               \
-        virial[r]=store_answers_p_acc[r][tid];                              \
+        virial[r]=red_acc[r][tid];                                          \
     }                                                                       \
   }                                                                         \
   if (offset==0) {                                                          \
@@ -110,12 +111,13 @@ _texture( ts6_tex,int4);
 
 #define acc_zeta(z, tid, t_per_atom, offset)                                \
   if (t_per_atom>1) {                                                       \
+    __local acctyp red_acc[BLOCK_PAIR];                                     \
     red_acc[tid]=z;                                                         \
     for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
       if (offset < s) {                                                     \
         red_acc[tid] += red_acc[tid+s];                                     \
       }                                                                     \
-  }                                                                         \
+    }                                                                       \
     z=red_acc[tid];                                                         \
   }
 
@@ -242,7 +244,7 @@ __kernel void k_tersoff_zbl_zeta(const __global numtyp4 *restrict x_,
                              const int nbor_pitch, const int t_per_atom) {
   __local int tpa_sq,n_stride;
   tpa_sq = fast_mul(t_per_atom,t_per_atom);
-  __local acctyp red_acc[BLOCK_PAIR];
+
   int tid, ii, offset;
   atom_info(tpa_sq,ii,tid,offset);
 
@@ -410,7 +412,7 @@ __kernel void k_tersoff_zbl_repulsive(const __global numtyp4 *restrict x_,
   __local int n_stride;
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
-  __local acctyp store_answers_acc[6][BLOCK_PAIR];
+
   __local numtyp4 ts1[SHARED_SIZE];
   __local numtyp4 ts2[SHARED_SIZE];
   __local numtyp4 ts6[SHARED_SIZE];
@@ -528,7 +530,6 @@ __kernel void k_tersoff_zbl_three_center(const __global numtyp4 *restrict x_,
 
   int tid, ii, offset;
   atom_info(tpa_sq,ii,tid,offset); // offset ranges from 0 to tpa_sq-1
-  __local acctyp store_answers_p_acc[6][BLOCK_PAIR];
 
   __local numtyp4 ts1[SHARED_SIZE];
   __local numtyp4 ts2[SHARED_SIZE];
@@ -711,11 +712,6 @@ __kernel void k_tersoff_zbl_three_end(const __global numtyp4 *restrict x_,
 
   int tid, ii, offset;
   atom_info(tpa_sq,ii,tid,offset);
-  #ifdef THREE_CONCURRENT
-  __local acctyp store_answers_acc[6][BLOCK_PAIR];
-  #else
-  __local acctyp store_answers_p_acc[6][BLOCK_PAIR];
-  #endif
 
   __local numtyp4 ts1[SHARED_SIZE];
   __local numtyp4 ts2[SHARED_SIZE];
@@ -945,11 +941,6 @@ __kernel void k_tersoff_zbl_three_end_vatom(const __global numtyp4 *restrict x_,
 
   int tid, ii, offset;
   atom_info(tpa_sq,ii,tid,offset);
-#ifdef THREE_CONCURRENT
-  __local acctyp store_answers_acc[6][BLOCK_PAIR];
-#else
-  __local acctyp store_answers_p_acc[6][BLOCK_PAIR];
-#endif
 
   __local numtyp4 ts1[SHARED_SIZE];
   __local numtyp4 ts2[SHARED_SIZE];
