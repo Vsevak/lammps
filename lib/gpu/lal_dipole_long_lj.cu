@@ -31,107 +31,6 @@ _texture_2d( mu_tex,int4);
 #define mu_tex mu_
 #endif
 
-#if (ARCH < 300)
-
-#define store_answers_tq(f, tor, energy, ecoul, virial, ii, inum, tid,      \
-                        t_per_atom, offset, eflag, vflag, ans, engv)        \
-  if (t_per_atom>1) {                                                       \
-    __local acctyp red_acc[8][BLOCK_PAIR];                                  \
-    red_acc[0][tid]=f.x;                                                    \
-    red_acc[1][tid]=f.y;                                                    \
-    red_acc[2][tid]=f.z;                                                    \
-    red_acc[3][tid]=tor.x;                                                  \
-    red_acc[4][tid]=tor.y;                                                  \
-    red_acc[5][tid]=tor.z;                                                  \
-    for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
-      if (offset < s) {                                                     \
-        for (int r=0; r<6; r++)                                             \
-          red_acc[r][tid] += red_acc[r][tid+s];                             \
-      }                                                                     \
-    }                                                                       \
-    f.x=red_acc[0][tid];                                                    \
-    f.y=red_acc[1][tid];                                                    \
-    f.z=red_acc[2][tid];                                                    \
-    tor.x=red_acc[3][tid];                                                  \
-    tor.y=red_acc[4][tid];                                                  \
-    tor.z=red_acc[5][tid];                                                  \
-    if (eflag>0 || vflag>0) {                                               \
-      for (int r=0; r<6; r++)                                               \
-        red_acc[r][tid]=virial[r];                                          \
-      red_acc[6][tid]=energy;                                               \
-      red_acc[7][tid]=ecoul;                                                \
-      for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                       \
-        if (offset < s) {                                                   \
-          for (int r=0; r<8; r++)                                           \
-            red_acc[r][tid] += red_acc[r][tid+s];                           \
-        }                                                                   \
-      }                                                                     \
-      for (int r=0; r<6; r++)                                               \
-        virial[r]=red_acc[r][tid];                                          \
-      energy=red_acc[6][tid];                                               \
-      ecoul=red_acc[7][tid];                                                \
-    }                                                                       \
-  }                                                                         \
-  if (offset==0) {                                                          \
-    int ei=ii;                                                              \
-    if (eflag>0) {                                                          \
-      engv[ei]=energy*(acctyp)0.5;                                             \
-      ei+=inum;                                                           \
-      engv[ei]=e_coul*(acctyp)0.5;                                             \
-      ei+=inum;                                                           \
-    }                                                                       \
-    if (vflag>0) {                                                          \
-      for (int i=0; i<6; i++) {                                             \
-        engv[ei]=virial[i]*(acctyp)0.5;                                        \
-        ei+=inum;                                                         \
-      }                                                                     \
-    }                                                                       \
-    ans[ii]=f;                                                              \
-    ans[ii+inum]=tor;                                                       \
-  }
-
-#else
-
-#define store_answers_tq(f, tor, energy, e_coul, virial, ii, inum, tid,     \
-                        t_per_atom, offset, eflag, vflag, ans, engv)        \
-  if (t_per_atom>1) {                                                       \
-    for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
-        f.x += shfl_xor(f.x, s, t_per_atom);                                \
-        f.y += shfl_xor(f.y, s, t_per_atom);                                \
-        f.z += shfl_xor(f.z, s, t_per_atom);                                \
-        tor.x += shfl_xor(tor.x, s, t_per_atom);                            \
-        tor.y += shfl_xor(tor.y, s, t_per_atom);                            \
-        tor.z += shfl_xor(tor.z, s, t_per_atom);                            \
-        energy += shfl_xor(energy, s, t_per_atom);                          \
-        e_coul += shfl_xor(e_coul, s, t_per_atom);                          \
-    }                                                                       \
-    if (vflag>0) {                                                          \
-      for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                       \
-          for (int r=0; r<6; r++)                                           \
-            virial[r] += shfl_xor(virial[r], s, t_per_atom);                \
-      }                                                                     \
-    }                                                                       \
-  }                                                                         \
-  if (offset==0) {                                                          \
-    int ei=ii;                                                              \
-    if (eflag>0) {                                                          \
-      engv[ei]=energy*(acctyp)0.5;                                             \
-      ei+=inum;                                                           \
-      engv[ei]=e_coul*(acctyp)0.5;                                             \
-      ei+=inum;                                                           \
-    }                                                                       \
-    if (vflag>0) {                                                          \
-      for (int i=0; i<6; i++) {                                             \
-        engv[ei]=virial[i]*(acctyp)0.5;                                        \
-        ei+=inum;                                                         \
-      }                                                                     \
-    }                                                                       \
-    ans[ii]=f;                                                              \
-    ans[ii+inum]=tor;                                                       \
-  }
-
-#endif
-
 #define MY_PIS (acctyp)1.77245385090551602729
 
 __kernel void k_dipole_long_lj(const __global numtyp4 *restrict x_,
@@ -152,6 +51,7 @@ __kernel void k_dipole_long_lj(const __global numtyp4 *restrict x_,
                           const numtyp g_ewald, const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  __local acctyp store_answers_tq_acc[8][BLOCK_PAIR];
 
   __local numtyp sp_lj[8];
   sp_lj[0]=sp_lj_in[0];
@@ -182,7 +82,7 @@ __kernel void k_dipole_long_lj(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
               n_stride,nbor_end,nbor);
 
@@ -401,6 +301,7 @@ __kernel void k_dipole_long_lj_fast(const __global numtyp4 *restrict x_,
                                const numtyp g_ewald, const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  __local acctyp store_answers_tq_acc[8][BLOCK_PAIR];
 
   __local numtyp4 lj1[MAX_SHARED_TYPES*MAX_SHARED_TYPES];
   __local numtyp4 lj3[MAX_SHARED_TYPES*MAX_SHARED_TYPES];
@@ -436,7 +337,7 @@ __kernel void k_dipole_long_lj_fast(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
               n_stride,nbor_end,nbor);
 

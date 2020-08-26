@@ -43,6 +43,8 @@
 #if (ARCH < 300)
 
 #define INIT_STORE_ANSWERS __local acctyp store_answers_acc[6][BLOCK_PAIR];
+#define INIT_STORE_ANSWERS_TQ __local acctyp store_answers_acc[8][BLOCK_PAIR];
+
 #define store_answers(f, energy, virial, ii, inum, tid, t_per_atom, offset, \
                       eflag, vflag, ans, engv)                              \
   if (t_per_atom>1) {                                                       \
@@ -138,9 +140,65 @@
     ans[ii]=f;                                                              \
   }
 
+#define store_answers_tq(f, tor, energy, ecoul, virial, ii, inum, tid,      \
+                        t_per_atom, offset, eflag, vflag, ans, engv)        \
+  if (t_per_atom>1) {                                                       \                                                   \
+    store_answers_tq_acc[1][tid]=f.y;                                       \
+    store_answers_tq_acc[2][tid]=f.z;                                       \
+    store_answers_tq_acc[3][tid]=tor.x;                                     \
+    store_answers_tq_acc[4][tid]=tor.y;                                     \
+    store_answers_tq_acc[5][tid]=tor.z;                                     \
+    for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
+      if (offset < s) {                                                     \
+        for (int r=0; r<6; r++)                                             \
+          store_answers_tq_acc[r][tid] += store_answers_tq_acc[r][tid+s];   \
+      }                                                                     \
+    }                                                                       \
+    f.x=store_answers_tq_acc[0][tid];                                       \
+    f.y=store_answers_tq_acc[1][tid];                                       \
+    f.z=store_answers_tq_acc[2][tid];                                       \
+    tor.x=store_answers_tq_acc[3][tid];                                     \
+    tor.y=store_answers_tq_acc[4][tid];                                     \
+    tor.z=store_answers_tq_acc[5][tid];                                     \
+    if (eflag>0 || vflag>0) {                                               \
+      for (int r=0; r<6; r++)                                               \
+        store_answers_tq_acc[r][tid]=virial[r];                             \
+        store_answers_tq_acc[6][tid]=energy;                                \
+        store_answers_tq_acc[7][tid]=ecoul;                                 \
+      for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                       \
+        if (offset < s) {                                                   \
+          for (int r=0; r<8; r++)                                           \
+            store_answers_tq_acc[r][tid] += store_answers_tq_acc[r][tid+s]; \
+        }                                                                   \
+      }                                                                     \
+      for (int r=0; r<6; r++)                                               \
+        virial[r]=store_answers_tq_acc[r][tid];                             \
+      energy=store_answers_tq_acc[6][tid];                                  \
+      ecoul=store_answers_tq_acc[7][tid];                                   \
+    }                                                                       \
+  }                                                                         \
+  if (offset==0) {                                                          \
+    int ei=ii;                                                              \
+    if (eflag>0) {                                                          \
+      engv[ei]=energy*(acctyp)0.5;                                          \
+      ei+=inum;                                                             \
+      engv[ei]=e_coul*(acctyp)0.5;                                          \
+      ei+=inum;                                                             \
+    }                                                                       \
+    if (vflag>0) {                                                          \
+      for (int i=0; i<6; i++) {                                             \
+        engv[ei]=virial[i]*(acctyp)0.5;                                     \
+        ei+=inum;                                                           \
+      }                                                                     \
+    }                                                                       \
+    ans[ii]=f;                                                              \
+    ans[ii+inum]=tor;                                                       \
+  }
+
 #else
 
 #define INIT_STORE_ANSWERS
+#define INIT_STORE_ANSWERS_TQ
 #define store_answers(f, energy, virial, ii, inum, tid, t_per_atom, offset, \
                       eflag, vflag, ans, engv)                              \
   if (t_per_atom>1) {                                                       \
@@ -204,6 +262,45 @@
       }                                                                     \
     }                                                                       \
     ans[ii]=f;                                                              \
+  }
+
+
+#define store_answers_tq(f, tor, energy, e_coul, virial, ii, inum, tid,     \
+                         t_per_atom, offset, eflag, vflag, ans, engv)       \
+  if (t_per_atom>1) {                                                       \
+    for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
+        f.x += shfl_xor(f.x, s, t_per_atom);                                \
+        f.y += shfl_xor(f.y, s, t_per_atom);                                \
+        f.z += shfl_xor(f.z, s, t_per_atom);                                \
+        tor.x += shfl_xor(tor.x, s, t_per_atom);                            \
+        tor.y += shfl_xor(tor.y, s, t_per_atom);                            \
+        tor.z += shfl_xor(tor.z, s, t_per_atom);                            \
+        energy += shfl_xor(energy, s, t_per_atom);                          \
+        e_coul += shfl_xor(e_coul, s, t_per_atom);                          \
+    }                                                                       \
+    if (vflag>0) {                                                          \
+      for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                       \
+          for (int r=0; r<6; r++)                                           \
+            virial[r] += shfl_xor(virial[r], s, t_per_atom);                \
+      }                                                                     \
+    }                                                                       \
+  }                                                                         \
+  if (offset==0) {                                                          \
+    int ei=ii;                                                              \
+    if (eflag>0) {                                                          \
+      engv[ei]=energy*(acctyp)0.5;                                          \
+      ei+=inum;                                                             \
+      engv[ei]=e_coul*(acctyp)0.5;                                          \
+      ei+=inum;                                                             \
+    }                                                                       \
+    if (vflag>0) {                                                          \
+      for (int i=0; i<6; i++) {                                             \
+        engv[ei]=virial[i]*(acctyp)0.5;                                     \
+        ei+=inum;                                                           \
+      }                                                                     \
+    }                                                                       \
+    ans[ii]=f;                                                              \
+    ans[ii+inum]=tor;                                                       \
   }
 
 #endif
