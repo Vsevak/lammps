@@ -14,6 +14,8 @@
  ***************************************************************************/
 
 #include "lal_atom.h"
+#include "lal_sort.h"
+#include "geryon/ucl_print.h"
 
 #ifdef USE_HIP_DEVICE_SORT
 #include <hip/hip_runtime.h>
@@ -92,6 +94,12 @@ bool AtomT::alloc(const int nall) {
       hipMalloc(&sort_temp_storage, temp_storage_bytes);
       sort_temp_storage_size = temp_storage_bytes;
     }
+  }
+  #endif
+
+  #ifdef USE_LAMMPS_SORT
+  if (_gpu_nbor==1 && !sorter) {
+    sorter.reset(new RadixSort(*dev, _ocl_compile_string));
   }
   #endif
 
@@ -230,6 +238,12 @@ bool AtomT::add_fields(const bool charge, const bool rot,
     }
     #endif
 
+    #ifdef USE_LAMMPS_SORT
+    if (!sorter) {
+      sorter.reset(new RadixSort(*dev, _ocl_compile_string));
+    }
+    #endif
+
     success=success && (dev_particle_id.alloc(_max_atoms,*dev,
                                               UCL_READ_ONLY)==UCL_SUCCESS);
     gpu_bytes+=dev_particle_id.row_bytes();
@@ -254,7 +268,8 @@ bool AtomT::add_fields(const bool charge, const bool rot,
 
 template <class numtyp, class acctyp>
 bool AtomT::init(const int nall, const bool charge, const bool rot,
-                 UCL_Device &devi, const int gpu_nbor, const bool bonds, const bool vel) {
+                 UCL_Device &devi, std::string const& ocl_compile,
+                 const int gpu_nbor, const bool bonds, const bool vel) {
   clear();
 
   bool success=true;
@@ -270,6 +285,7 @@ bool AtomT::init(const int nall, const bool charge, const bool rot,
   _vel=vel;
   _other=_charge || _rot || _vel;
   dev=&devi;
+  _ocl_compile_string = ocl_compile;
   _time_transfer=0;
 
   // Initialize atom and nbor data
@@ -317,12 +333,10 @@ void AtomT::clear_resize() {
   type_cast.clear();
   #endif
 
-  #ifdef USE_CUDPP
-  if (_gpu_nbor==1) cudppDestroyPlan(sort_plan);
-  #endif
-
-  #ifdef USE_HIP_DEVICE_SORT
   if (_gpu_nbor==1) {
+    #ifdef USE_CUDPP
+    cudppDestroyPlan(sort_plan);
+    #elif USE_HIP_DEVICE_SORT
     if(sort_out_keys)     hipFree(sort_out_keys);
     if(sort_out_values)   hipFree(sort_out_values);
     if(sort_temp_storage) hipFree(sort_temp_storage);
@@ -331,9 +345,8 @@ void AtomT::clear_resize() {
     sort_temp_storage = nullptr;
     sort_temp_storage_size = 0;
     sort_out_size = 0;
+    #endif
   }
-  #endif
-
   if (_gpu_nbor==2) {
     host_particle_id.clear();
     host_cell_id.clear();
@@ -376,6 +389,14 @@ double AtomT::host_memory_usage() const {
 // Sort arrays for neighbor list calculation
 template <class numtyp, class acctyp>
 void AtomT::sort_neighbor(const int num_atoms) {
+#if USE_LAMMPS_SORT
+  if (sorter) {
+    sorter->sort(dev_cell_id, dev_particle_id, num_atoms);
+  } else {
+    printf("Error in LAMMPS GPU Sorter\n");
+  }
+#endif
+
   #ifdef USE_CUDPP
   CUDPPResult result = cudppSort(sort_plan, (unsigned *)dev_cell_id.begin(),
                                  (int *)dev_particle_id.begin(),

@@ -16,6 +16,7 @@
 #ifndef PAIR_GPU_ATOM_H
 #define PAIR_GPU_ATOM_H
 
+#include <memory>
 #include <cmath>
 #include "mpi.h"
 
@@ -45,6 +46,10 @@ using namespace ucl_cudadr;
 #include "cudpp.h"
 #endif
 
+#ifdef USE_LAMMPS_SORT
+#include "lal_sort.h"
+#endif
+
 #include "lal_precision.h"
 
 namespace LAMMPS_AL {
@@ -72,7 +77,8 @@ class Atom {
     *        gpu_nbor 1 if neighboring will be performed on device
     *        gpu_nbor 2 if binning on host and neighboring on device **/
   bool init(const int nall, const bool charge, const bool rot,
-            UCL_Device &dev, const int gpu_nbor=0, const bool bonds=false,
+            UCL_Device &dev, std::string const& ocl_compile,
+            const int gpu_nbor=0, const bool bonds=false,
             const bool vel=false);
 
   /// Check if we have enough device storage and realloc if not
@@ -475,12 +481,17 @@ class Atom {
   int _max_atoms, _nall, _gpu_nbor;
   bool _host_view;
   double _time_cast, _time_transfer;
+  std::string _ocl_compile_string;
 
   double _max_gpu_bytes;
 
   #ifdef USE_CUDPP
   CUDPPConfiguration sort_config;
   CUDPPHandle sort_plan;
+  #endif
+
+  #ifdef USE_LAMMPS_SORT
+  std::unique_ptr<RadixSort> sorter;
   #endif
 
   #ifdef USE_HIP_DEVICE_SORT

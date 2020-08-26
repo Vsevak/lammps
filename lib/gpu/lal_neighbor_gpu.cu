@@ -32,26 +32,44 @@ _texture( pos_tex,float4);
 _texture_2d( pos_tex,int4);
 #endif
 
-__kernel void calc_cell_id(const numtyp4 *restrict pos,
-                           unsigned *restrict cell_id,
-                           int *restrict particle_id,
-                           numtyp boxlo0, numtyp boxlo1, numtyp boxlo2,
-                           numtyp i_cell_size, int ncellx, int ncelly,
-                           int ncellz, int inum, int nall,
-                           int cells_in_cutoff) {
-  int i = threadIdx.x + blockIdx.x*blockDim.x;
+
+
+#else
+#define pos_tex x_
+#ifdef LAMMPS_SMALLBIG
+#define tagint int
+#endif
+#ifdef LAMMPS_BIGBIG
+#define tagint long long int
+#endif
+#ifdef LAMMPS_SMALLSMALL
+#define tagint int
+#endif
+#endif
+
+
+__kernel void calc_cell_id(
+    const __global numtyp4 *restrict x_,
+    __global unsigned  *restrict cell_id,
+    __global int  *restrict particle_id,
+    numtyp boxlo0, numtyp boxlo1, numtyp boxlo2,
+    numtyp i_cell_size, int ncellx, int ncelly,
+    int ncellz, int inum, int nall,
+    int cells_in_cutoff) {
+
+  int i = GLOBAL_ID_X;
 
   if (i < nall) {
     numtyp4 p;
-    fetch4(p,i,pos_tex); //pos[i];
+    fetch4(p,i,pos_tex); //x_[i];
 
     p.x -= boxlo0;
     p.y -= boxlo1;
     p.z -= boxlo2;
 
-    int ix = int(p.x*i_cell_size+cells_in_cutoff);
-    int iy = int(p.y*i_cell_size+cells_in_cutoff);
-    int iz = int(p.z*i_cell_size+cells_in_cutoff);
+    int ix = (int)(p.x*i_cell_size+cells_in_cutoff);
+    int iy = (int)(p.y*i_cell_size+cells_in_cutoff);
+    int iz = (int)(p.z*i_cell_size+cells_in_cutoff);
 
     int offset_lo, offset_hi;
     if (i<inum) {
@@ -74,10 +92,11 @@ __kernel void calc_cell_id(const numtyp4 *restrict pos,
   }
 }
 
-__kernel void kernel_calc_cell_counts(const unsigned *restrict cell_id,
-                                      int *restrict cell_counts,
-                                      int nall, int ncell) {
-  int idx = threadIdx.x + blockIdx.x * blockDim.x;
+__kernel void kernel_calc_cell_counts(
+    const __global unsigned *restrict cell_id,
+    __global int *restrict cell_counts,
+    int nall, int ncell) {
+  int idx = GLOBAL_ID_X;
   if (idx < nall) {
     int id = cell_id[idx];
 
@@ -100,19 +119,6 @@ __kernel void kernel_calc_cell_counts(const unsigned *restrict cell_id,
     }
   }
 }
-
-#else
-#define pos_tex x_
-#ifdef LAMMPS_SMALLBIG
-#define tagint int
-#endif
-#ifdef LAMMPS_BIGBIG
-#define tagint long long int
-#endif
-#ifdef LAMMPS_SMALLSMALL
-#define tagint int
-#endif
-#endif
 
 __kernel void transpose(__global tagint *restrict out,
                         const __global tagint *restrict in,

@@ -268,14 +268,15 @@ int DeviceT::init(Answer<numtyp,acctyp> &ans, const bool charge,
     gpu_nbor=1;
   else if (_gpu_mode==Device<numtyp,acctyp>::GPU_HYB_NEIGH)
     gpu_nbor=2;
-  #if !defined(USE_CUDPP) && !defined(USE_HIP_DEVICE_SORT)
+  #if !defined(USE_CUDPP) && !defined(USE_HIP_DEVICE_SORT) && !defined(USE_LAMMPS_SORT)
   if (gpu_nbor==1)
     gpu_nbor=2;
   #endif
 
   if (_init_count==0) {
     // Initialize atom and nbor data
-    if (!atom.init(nall,charge,rot,*gpu,gpu_nbor,gpu_nbor>0 && maxspecial>0,vel))
+    if (!atom.init(nall,charge,rot,*gpu,_ocl_compile_string,
+        gpu_nbor,gpu_nbor>0 && maxspecial>0,vel))
       return -3;
 
     _data_in_estimate++;
@@ -313,7 +314,7 @@ int DeviceT::init(Answer<numtyp,acctyp> &ans, const int nlocal,
 
   if (_init_count==0) {
     // Initialize atom and nbor data
-    if (!atom.init(nall,true,false,*gpu,false,false))
+    if (!atom.init(nall,true,false,*gpu,_ocl_compile_string,false,false))
       return -3;
   } else
     if (!atom.add_fields(true,false,false,false))
@@ -341,7 +342,7 @@ int DeviceT::init_nbor(Neighbor *nbor, const int nlocal,
     gpu_nbor=1;
   else if (_gpu_mode==Device<numtyp,acctyp>::GPU_HYB_NEIGH)
     gpu_nbor=2;
-  #if !defined(USE_CUDPP) && !defined(USE_HIP_DEVICE_SORT)
+  #if !defined(USE_CUDPP) && !defined(USE_HIP_DEVICE_SORT) && !defined(USE_LAMMPS_SORT)
   if (gpu_nbor==1)
     gpu_nbor=2;
   #endif
