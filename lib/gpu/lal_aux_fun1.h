@@ -88,38 +88,37 @@
     ans[ii]=f;                                                              \
   }
 
-#define INIT_STORE_ANSWERS_Q __local acctyp store_answers_q_acc[6][BLOCK_PAIR];
-// MACRO store_answers_q  require INIT_STORE_ANSWERS_Q in the outer scope
+// MACRO store_answers_q  require INIT_STORE_ANSWERS in the outer scope
 #define store_answers_q(f, energy, e_coul, virial, ii, inum, tid,           \
                         t_per_atom, offset, eflag, vflag, ans, engv)        \
   if (t_per_atom>1) {                                                       \
-    store_answers_q_acc[0][tid]=f.x;                                        \
-    store_answers_q_acc[1][tid]=f.y;                                        \
-    store_answers_q_acc[2][tid]=f.z;                                        \
-    store_answers_q_acc[3][tid]=energy;                                     \
-    store_answers_q_acc[4][tid]=e_coul;                                     \
+    store_answers_acc[0][tid]=f.x;                                        \
+    store_answers_acc[1][tid]=f.y;                                        \
+    store_answers_acc[2][tid]=f.z;                                        \
+    store_answers_acc[3][tid]=energy;                                     \
+    store_answers_acc[4][tid]=e_coul;                                     \
     for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
       if (offset < s) {                                                     \
         for (int r=0; r<5; r++)                                             \
-          store_answers_q_acc[r][tid] += store_answers_q_acc[r][tid+s];                             \
+          store_answers_acc[r][tid] += store_answers_acc[r][tid+s];                             \
       }                                                                     \
     }                                                                       \
-    f.x=store_answers_q_acc[0][tid];                                        \
-    f.y=store_answers_q_acc[1][tid];                                        \
-    f.z=store_answers_q_acc[2][tid];                                        \
-    energy=store_answers_q_acc[3][tid];                                     \
-    e_coul=store_answers_q_acc[4][tid];                                     \
+    f.x=store_answers_acc[0][tid];                                        \
+    f.y=store_answers_acc[1][tid];                                        \
+    f.z=store_answers_acc[2][tid];                                        \
+    energy=store_answers_acc[3][tid];                                     \
+    e_coul=store_answers_acc[4][tid];                                     \
     if (vflag>0) {                                                          \
       for (int r=0; r<6; r++)                                               \
-        store_answers_q_acc[r][tid]=virial[r];                              \
+        store_answers_acc[r][tid]=virial[r];                              \
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                       \
         if (offset < s) {                                                   \
           for (int r=0; r<6; r++)                                           \
-            store_answers_q_acc[r][tid] += store_answers_q_acc[r][tid+s];   \
+            store_answers_acc[r][tid] += store_answers_acc[r][tid+s];   \
         }                                                                   \
       }                                                                     \
       for (int r=0; r<6; r++)                                               \
-        virial[r]=store_answers_q_acc[r][tid];                              \
+        virial[r]=store_answers_acc[r][tid];                              \
     }                                                                       \
   }                                                                         \
   if (offset==0) {                                                          \
@@ -173,7 +172,6 @@
     ans[ii]=f;                                                              \
   }
 
-#define INIT_STORE_ANSWERS_Q
 #define store_answers_q(f, energy, e_coul, virial, ii, inum, tid,           \
                         t_per_atom, offset, eflag, vflag, ans, engv)        \
   if (t_per_atom>1) {                                                       \
