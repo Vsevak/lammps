@@ -113,6 +113,10 @@ enum{SPHERE_SPHERE,SPHERE_ELLIPSE,ELLIPSE_SPHERE,ELLIPSE_ELLIPSE};
 #define OCL_DEFAULT_VENDOR "cypress"
 #endif
 
+#ifdef VEGA_OCL
+#define OCL_DEFAULT_VENDOR "vega"
+#endif
+
 #ifdef GENERIC_OCL
 #define OCL_DEFAULT_VENDOR "generic"
 #endif

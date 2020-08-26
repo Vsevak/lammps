@@ -200,6 +200,9 @@ int DeviceT::set_ocl_params(char *ocl_vendor) {
   } else if (s_vendor=="cypress") {
     _ocl_vendor_name="AMD Cypress";
     _ocl_vendor_string="-DCYPRESS_OCL";
+  } else if (s_vendor=="vega") {
+    _ocl_vendor_name="AMD Vega20";
+    _ocl_vendor_string="-DVEGA_OCL";
   } else if (s_vendor=="phi") {
     _ocl_vendor_name="Intel Phi";
     _ocl_vendor_string="-DPHI_OCL";

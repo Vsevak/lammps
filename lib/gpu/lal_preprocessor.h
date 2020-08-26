@@ -499,6 +499,30 @@ inline double shfl_xor(double var, int laneMask, int width) {
 #endif
 
 // -------------------------------------------------------------------------
+//                            AMD Vega20 OPENCL DEFINITIONS
+// -------------------------------------------------------------------------
+
+#ifdef VEGA_OCL
+
+#define USE_OPENCL
+#define MEM_THREADS 32
+#define THREADS_PER_ATOM 4
+#define THREADS_PER_CHARGE 8
+#define BLOCK_PAIR 256
+#define MAX_SHARED_TYPES 8
+#define BLOCK_NBOR_BUILD 128
+#define BLOCK_BIO_PAIR 256
+
+#define WARP_SIZE 64
+#define PPPM_BLOCK_1D 64
+#define BLOCK_CELL_2D 8
+#define BLOCK_CELL_ID 128
+#define MAX_BIO_SHARED_TYPES 128
+
+#endif
+
+
+// -------------------------------------------------------------------------
 //                           INTEL CPU OPENCL DEFINITIONS
 // -------------------------------------------------------------------------
 
