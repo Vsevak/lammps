@@ -44,41 +44,41 @@ _texture_2d( quat_tex,int4);
 
 #if (ARCH < 300)
 
+#define INIT_STORE_ANSWERS_T __local acctyp store_answers_t_acc[7][BLOCK_PAIR];
 #define store_answers_t(f, tor, energy, virial, ii, astride, tid,           \
                         t_per_atom, offset, eflag, vflag, ans, engv)        \
   if (t_per_atom>1) {                                                       \
-    __local acctyp red_acc[7][BLOCK_PAIR];                                  \
-    red_acc[0][tid]=f.x;                                                    \
-    red_acc[1][tid]=f.y;                                                    \
-    red_acc[2][tid]=f.z;                                                    \
-    red_acc[3][tid]=tor.x;                                                  \
-    red_acc[4][tid]=tor.y;                                                  \
-    red_acc[5][tid]=tor.z;                                                  \
+	  store_answers_t_acc[0][tid]=f.x;                                                    \
+	  store_answers_t_acc[1][tid]=f.y;                                                    \
+	  store_answers_t_acc[2][tid]=f.z;                                                    \
+	  store_answers_t_acc[3][tid]=tor.x;                                                  \
+	  store_answers_t_acc[4][tid]=tor.y;                                                  \
+	  store_answers_t_acc[5][tid]=tor.z;                                                  \
     for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
       if (offset < s) {                                                     \
         for (int r=0; r<6; r++)                                             \
-          red_acc[r][tid] += red_acc[r][tid+s];                             \
+		      store_answers_t_acc[r][tid] += store_answers_t_acc[r][tid+s];                             \
       }                                                                     \
     }                                                                       \
-    f.x=red_acc[0][tid];                                                    \
-    f.y=red_acc[1][tid];                                                    \
-    f.z=red_acc[2][tid];                                                    \
-    tor.x=red_acc[3][tid];                                                  \
-    tor.y=red_acc[4][tid];                                                  \
-    tor.z=red_acc[5][tid];                                                  \
+    f.x=store_answers_t_acc[0][tid];                                                    \
+    f.y=store_answers_t_acc[1][tid];                                                    \
+    f.z=store_answers_t_acc[2][tid];                                                    \
+    tor.x=store_answers_t_acc[3][tid];                                                  \
+    tor.y=store_answers_t_acc[4][tid];                                                  \
+    tor.z=store_answers_t_acc[5][tid];                                                  \
     if (eflag>0 || vflag>0) {                                               \
       for (int r=0; r<6; r++)                                               \
-        red_acc[r][tid]=virial[r];                                          \
-      red_acc[6][tid]=energy;                                               \
+	      store_answers_t_acc[r][tid]=virial[r];                                          \
+	    store_answers_t_acc[6][tid]=energy;                                               \
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                       \
         if (offset < s) {                                                   \
           for (int r=0; r<7; r++)                                           \
-            red_acc[r][tid] += red_acc[r][tid+s];                           \
+		        store_answers_t_acc[r][tid] += store_answers_t_acc[r][tid+s];                           \
         }                                                                   \
       }                                                                     \
       for (int r=0; r<6; r++)                                               \
-        virial[r]=red_acc[r][tid];                                          \
-      energy=red_acc[6][tid];                                               \
+        virial[r]=store_answers_t_acc[r][tid];                                          \
+      energy=store_answers_t_acc[6][tid];                                               \
     }                                                                       \
   }                                                                         \
   if (offset==0) {                                                          \
@@ -97,35 +97,35 @@ _texture_2d( quat_tex,int4);
     ans[ii+astride]=tor;                                                    \
   }
 
+#define INIT_ACC_ANSWERS __local acctyp acc_answers_acc[6][BLOCK_PAIR];
 #define acc_answers(f, energy, virial, ii, inum, tid, t_per_atom, offset,   \
                     eflag, vflag, ans, engv)                                \
   if (t_per_atom>1) {                                                       \
-    __local acctyp red_acc[6][BLOCK_PAIR];                                  \
-    red_acc[0][tid]=f.x;                                                    \
-    red_acc[1][tid]=f.y;                                                    \
-    red_acc[2][tid]=f.z;                                                    \
-    red_acc[3][tid]=energy;                                                 \
+	  acc_answers_acc[0][tid]=f.x;                                                    \
+	  acc_answers_acc[1][tid]=f.y;                                                    \
+	  acc_answers_acc[2][tid]=f.z;                                                    \
+	  acc_answers_acc[3][tid]=energy;                                                 \
     for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
       if (offset < s) {                                                     \
         for (int r=0; r<4; r++)                                             \
-          red_acc[r][tid] += red_acc[r][tid+s];                             \
+		      acc_answers_acc[r][tid] += acc_answers_acc[r][tid+s];                             \
       }                                                                     \
     }                                                                       \
-    f.x=red_acc[0][tid];                                                    \
-    f.y=red_acc[1][tid];                                                    \
-    f.z=red_acc[2][tid];                                                    \
-    energy=red_acc[3][tid];                                                 \
+    f.x=acc_answers_acc[0][tid];                                                    \
+    f.y=acc_answers_acc[1][tid];                                                    \
+    f.z=acc_answers_acc[2][tid];                                                    \
+    energy=acc_answers_acc[3][tid];                                                 \
     if (vflag>0) {                                                          \
       for (int r=0; r<6; r++)                                               \
-        red_acc[r][tid]=virial[r];                                          \
+	      acc_answers_acc[r][tid]=virial[r];                                          \
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                       \
         if (offset < s) {                                                   \
           for (int r=0; r<6; r++)                                           \
-            red_acc[r][tid] += red_acc[r][tid+s];                           \
+		        acc_answers_acc[r][tid] += acc_answers_acc[r][tid+s];                           \
         }                                                                   \
       }                                                                     \
       for (int r=0; r<6; r++)                                               \
-        virial[r]=red_acc[r][tid];                                          \
+        virial[r]=acc_answers_acc[r][tid];                                          \
     }                                                                       \
   }                                                                         \
   if (offset==0) {                                                          \
@@ -149,6 +149,7 @@ _texture_2d( quat_tex,int4);
 
 #else
 
+#define INIT_STORE_ANSWERS_T
 #define store_answers_t(f, tor, energy, virial, ii, astride, tid,           \
                         t_per_atom, offset, eflag, vflag, ans, engv)        \
   if (t_per_atom>1) {                                                       \
@@ -184,6 +185,7 @@ _texture_2d( quat_tex,int4);
     ans[ii+astride]=tor;                                                    \
   }
 
+#define INIT_ACC_ANSWERS
 #define acc_answers(f, energy, virial, ii, inum, tid, t_per_atom, offset,   \
                     eflag, vflag, ans, engv)                                \
   if (t_per_atom>1) {                                                       \

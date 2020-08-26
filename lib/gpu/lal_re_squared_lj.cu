@@ -18,42 +18,41 @@
 #endif
 
 #if (ARCH < 300)
-
+#define INIT_STORE_ANSWERS_RT __local acctyp store_answers_rt_acc[7][BLOCK_PAIR];
 #define store_answers_rt(f, tor, energy, virial, ii, astride, tid,           \
                          t_per_atom, offset, eflag, vflag, ans, engv)        \
   if (t_per_atom>1) {                                                        \
-    __local acctyp red_acc[7][BLOCK_PAIR];                                   \
-    red_acc[0][tid]=f.x;                                                     \
-    red_acc[1][tid]=f.y;                                                     \
-    red_acc[2][tid]=f.z;                                                     \
-    red_acc[3][tid]=tor.x;                                                   \
-    red_acc[4][tid]=tor.y;                                                   \
-    red_acc[5][tid]=tor.z;                                                   \
+    store_answers_rt_acc[0][tid]=f.x;                                                     \
+    store_answers_rt_acc[1][tid]=f.y;                                                     \
+    store_answers_rt_acc[2][tid]=f.z;                                                     \
+    store_answers_rt_acc[3][tid]=tor.x;                                                   \
+    store_answers_rt_acc[4][tid]=tor.y;                                                   \
+    store_answers_rt_acc[5][tid]=tor.z;                                                   \
     for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                          \
       if (offset < s) {                                                      \
         for (int r=0; r<6; r++)                                              \
-          red_acc[r][tid] += red_acc[r][tid+s];                              \
+          store_answers_rt_acc[r][tid] += store_answers_rt_acc[r][tid+s];                              \
       }                                                                      \
     }                                                                        \
-    f.x=red_acc[0][tid];                                                     \
-    f.y=red_acc[1][tid];                                                     \
-    f.z=red_acc[2][tid];                                                     \
-    tor.x=red_acc[3][tid];                                                   \
-    tor.y=red_acc[4][tid];                                                   \
-    tor.z=red_acc[5][tid];                                                   \
+    f.x=store_answers_rt_acc[0][tid];                                                     \
+    f.y=store_answers_rt_acc[1][tid];                                                     \
+    f.z=store_answers_rt_acc[2][tid];                                                     \
+    tor.x=store_answers_rt_acc[3][tid];                                                   \
+    tor.y=store_answers_rt_acc[4][tid];                                                   \
+    tor.z=store_answers_rt_acc[5][tid];                                                   \
     if (eflag>0 || vflag>0) {                                                \
       for (int r=0; r<6; r++)                                                \
-        red_acc[r][tid]=virial[r];                                           \
-      red_acc[6][tid]=energy;                                                \
+        store_answers_rt_acc[r][tid]=virial[r];                                           \
+      store_answers_rt_acc[6][tid]=energy;                                                \
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                        \
         if (offset < s) {                                                    \
           for (int r=0; r<7; r++)                                            \
-            red_acc[r][tid] += red_acc[r][tid+s];                            \
+            store_answers_rt_acc[r][tid] += store_answers_rt_acc[r][tid+s];                            \
         }                                                                    \
       }                                                                      \
       for (int r=0; r<6; r++)                                                \
-        virial[r]=red_acc[r][tid];                                           \
-      energy=red_acc[6][tid];                                                \
+        virial[r]=store_answers_rt_acc[r][tid];                                           \
+      energy=store_answers_rt_acc[6][tid];                                                \
     }                                                                        \
   }                                                                          \
   if (offset==0) {                                                           \
@@ -82,6 +81,7 @@
 
 #else
 
+#define INIT_STORE_ANSWERS_RT
 #define store_answers_rt(f, tor, energy, virial, ii, astride, tid,          \
                          t_per_atom, offset, eflag, vflag, ans, engv)       \
   if (t_per_atom>1) {                                                       \
@@ -145,6 +145,7 @@ __kernel void k_resquared_ellipsoid_sphere(const __global numtyp4 *restrict x_,
                                            const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS_RT;
 
   __local numtyp sp_lj[4];
   sp_lj[0]=splj[0];
@@ -174,7 +175,7 @@ __kernel void k_resquared_ellipsoid_sphere(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info_e(dev_nbor,stride,t_per_atom,ii,offset,i,numj,
                 n_stride,nbor_end,nbor);
 
@@ -400,6 +401,7 @@ __kernel void k_resquared_sphere_ellipsoid(const __global numtyp4 *restrict x_,
                                            const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS
   ii+=start;
 
   __local numtyp sp_lj[4];
@@ -426,7 +428,7 @@ __kernel void k_resquared_sphere_ellipsoid(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int j, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info_e(dev_nbor,stride,t_per_atom,ii,offset,j,numj,
                 n_stride,nbor_end,nbor);
 
@@ -598,6 +600,7 @@ __kernel void k_resquared_lj(const __global numtyp4 *restrict x_,
                              const int inum, const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_ACC_ANSWERS
   ii+=start;
 
   __local numtyp sp_lj[4];
@@ -618,7 +621,7 @@ __kernel void k_resquared_lj(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info_e(dev_ij,stride,t_per_atom,ii,offset,i,numj,
                 n_stride,nbor_end,nbor);
 
@@ -685,6 +688,7 @@ __kernel void k_resquared_lj_fast(const __global numtyp4 *restrict x_,
                                   const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_ACC_ANSWERS
   ii+=start;
 
   __local numtyp sp_lj[4];
@@ -712,7 +716,7 @@ __kernel void k_resquared_lj_fast(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info_e(dev_ij,stride,t_per_atom,ii,offset,i,numj,
                 n_stride,nbor_end,nbor);
 

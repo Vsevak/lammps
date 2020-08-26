@@ -98,6 +98,7 @@ __kernel void k_gayberne(const __global numtyp4 *restrict x_,
                          const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS_T;
 
   __local numtyp sp_lj[4];
   sp_lj[0]=gum[3];
@@ -121,7 +122,7 @@ __kernel void k_gayberne(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info_e(dev_nbor,stride,t_per_atom,ii,offset,i,numj,
                 n_stride,nbor_end,nbor);
 

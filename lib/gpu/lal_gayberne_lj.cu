@@ -35,6 +35,7 @@ __kernel void k_gayberne_sphere_ellipsoid(const __global numtyp4 *restrict x_,
                                           const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS;
   ii+=start;
 
   __local numtyp sp_lj[4];
@@ -55,7 +56,7 @@ __kernel void k_gayberne_sphere_ellipsoid(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info_e(dev_nbor,stride,t_per_atom,ii,offset,i,numj,
                 n_stride,nbor_end,nbor);
 
@@ -258,6 +259,7 @@ __kernel void k_gayberne_lj(const __global numtyp4 *restrict x_,
                             const int inum, const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_ACC_ANSWERS;
   ii+=start;
 
   __local numtyp sp_lj[4];
@@ -278,7 +280,7 @@ __kernel void k_gayberne_lj(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info_e(dev_ij,stride,t_per_atom,ii,offset,i,numj,
                 n_stride,nbor_end,nbor);
 
@@ -346,6 +348,7 @@ __kernel void k_gayberne_lj_fast(const __global numtyp4 *restrict x_,
                                  const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_ACC_ANSWERS;
   ii+=start;
 
   __local numtyp sp_lj[4];
@@ -373,7 +376,7 @@ __kernel void k_gayberne_lj_fast(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info_e(dev_ij,stride,t_per_atom,ii,offset,i,numj,
                 n_stride,nbor_end,nbor);
 
