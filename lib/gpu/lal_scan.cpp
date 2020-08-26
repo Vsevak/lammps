@@ -2,7 +2,8 @@
  * lal_sort.cpp
  *
  *  Created on: Aug 15, 2020
- *      Author: vsevak
+ *      Author: Vsevolod Nikolskiy
+ *       Email: thevsevak@gmail.com
  */
 
 #include <cmath>
@@ -22,8 +23,8 @@ namespace LAMMPS_AL {
 const int Scan::block_size = 256;
 
 Scan::Scan(UCL_Device &d, std::string param) : gpu(d), ocl_param(param) {
-  block_res.reserve(10);
-  block_res_out.reserve(10);
+  block_res.reserve(6);
+  block_res_out.reserve(6);
   compile_kernels();
 }
 
@@ -39,7 +40,7 @@ void Scan::scan(UCL_D_Vec<unsigned int> &input,
 
   int t = static_cast<int>(std::ceil(static_cast<double>(n)/block_size));
   while (block_res.size() < iter+1) {
-    block_res.emplace_back(UCL_D_Vec<unsigned int>());
+    block_res.emplace_back();
     block_res.back().alloc( std::max(t, 8), gpu);
   }
   block_res[iter].resize_ib(t);
@@ -51,7 +52,7 @@ void Scan::scan(UCL_D_Vec<unsigned int> &input,
   gpu.sync();
   if (t > 1) {
     while (block_res_out.size() < iter+1) {
-      block_res_out.emplace_back(UCL_D_Vec<unsigned int>());
+      block_res_out.emplace_back();
       block_res_out.back().alloc( std::max(t, 8), gpu);
     }
     block_res_out[iter].resize_ib(t);

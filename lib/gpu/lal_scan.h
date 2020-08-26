@@ -2,7 +2,8 @@
  * lal_scan.h
  *
  *  Created on: Aug 17, 2020
- *      Author: vsevak
+ *      Author: Vsevolod Nikolskiy
+ *       Email: thevsevak@gmail.com
  */
 
 #ifndef LIB_GPU_LAL_SCAN_H_
@@ -41,6 +42,11 @@ class Scan {
 public:
   Scan(UCL_Device &d, std::string);
   ~Scan() = default;
+  Scan(const Scan&) = delete;
+  Scan& operator=(const Scan&) = delete;
+  Scan(Scan &&) noexcept = default;
+  Scan& operator=(Scan &&) noexcept = default;
+
   void scan(UCL_D_Vec<unsigned int> &input,
       UCL_D_Vec<unsigned int> &output, const int n, const int iter=0);
 private:

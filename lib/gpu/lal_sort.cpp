@@ -2,7 +2,8 @@
  * lal_sort.cpp
  *
  *  Created on: Aug 15, 2020
- *      Author: vsevak
+ *      Author: Vsevolod Nikolskiy
+ *       Email: thevsevak@gmail.com
  */
 
 #include <string>
@@ -16,7 +17,6 @@ const char *sort=0;
 #else
 #include "sort_cubin.h"
 #endif
-
 
 namespace LAMMPS_AL {
 // This value must be consistent with BLOCK in lal_sort.cu
@@ -40,12 +40,14 @@ void RadixSort::sort(
 
   int t = static_cast<int>(std::ceil(static_cast<double>(n)/block_size));
   if (key.cols() < n) {
-    printf("\nWarning: RadixSort key is too short.\n");
-    key.resize(n);
+    printf("\nError: RadixSort key len=%lu is shorter than n=%d.\n",
+        key.cols(),  n);
+    return;
   }
   if (value.cols() < n) {
-    printf("\nWarning: RadixSort value is too short.\n");
-    value.resize(n);
+    printf("\nError: RadixSort key len=%lu is shorter than n=%d.\n",
+        value.cols(), n);
+    return;
   }
   k_out.resize_ib(n);
   v_out.resize_ib(n);

@@ -2,7 +2,8 @@
  * lal_scan.cu
  *
  *  Created on: Aug 17, 2020
- *      Author: vsevak
+ *      Author: Vsevolod Nikolskiy
+ *       Email: thevsevak@gmail.com
  */
 
 #if defined(NV_KERNEL) || defined(USE_HIP)

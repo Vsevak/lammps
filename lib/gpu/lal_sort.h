@@ -1,8 +1,9 @@
 /*
- * sort.h
+ * lal_sort.h
  *
  *  Created on: Aug 14, 2020
- *      Author: vsevak
+ *      Author: Vsevolod Nikolskiy
+ *       Email: thevsevak@gmail.com
  */
 
 #ifndef LAL_SORT_H_
@@ -18,6 +19,11 @@ class RadixSort {
 public:
   RadixSort(UCL_Device &gpu, std::string);
   ~RadixSort() = default;
+  RadixSort(const RadixSort&) = delete;
+  RadixSort& operator=(const RadixSort&) = delete;
+  RadixSort(RadixSort&&) noexcept = default;
+  RadixSort& operator=(RadixSort&&) noexcept = default;
+
   void sort(UCL_D_Vec<unsigned int> &k, UCL_D_Vec<int> &v, const int n);
 private:
   bool is_sorted(UCL_D_Vec<unsigned int> &input, const int n);
@@ -34,7 +40,6 @@ private:
   UCL_D_Vec<unsigned int> block;
   UCL_D_Vec<unsigned int> scan_block;
   UCL_Vector<int, int> f_sorted;
-
 
   static const int block_size;
 };

@@ -98,8 +98,8 @@ bool AtomT::alloc(const int nall) {
   #endif
 
   #ifdef USE_LAMMPS_SORT
-  if (_gpu_nbor==1 && sorter==nullptr) {
-    sorter = new RadixSort(*dev, _ocl_compile_string);
+  if (_gpu_nbor==1 && !sorter) {
+    sorter.reset(new RadixSort(*dev, _ocl_compile_string));
   }
   #endif
 
@@ -240,7 +240,7 @@ bool AtomT::add_fields(const bool charge, const bool rot,
 
     #ifdef USE_LAMMPS_SORT
     if (!sorter) {
-      sorter = new RadixSort(*dev, _ocl_compile_string);
+      sorter.reset(new RadixSort(*dev, _ocl_compile_string));
     }
     #endif
 
@@ -334,11 +334,9 @@ void AtomT::clear_resize() {
   #endif
 
   if (_gpu_nbor==1) {
-
-  #ifdef USE_CUDPP
-   cudppDestroyPlan(sort_plan);
-  #endif
-  #ifdef USE_HIP_DEVICE_SORT
+    #ifdef USE_CUDPP
+    cudppDestroyPlan(sort_plan);
+    #elif USE_HIP_DEVICE_SORT
     if(sort_out_keys)     hipFree(sort_out_keys);
     if(sort_out_values)   hipFree(sort_out_values);
     if(sort_temp_storage) hipFree(sort_temp_storage);
@@ -347,16 +345,8 @@ void AtomT::clear_resize() {
     sort_temp_storage = nullptr;
     sort_temp_storage_size = 0;
     sort_out_size = 0;
-  #endif
-  #ifdef USE_LAMMPS_SORT
-  if (sorter) {
-    delete sorter;
-    sorter = nullptr;
-   }
-  #endif
-
+    #endif
   }
-
   if (_gpu_nbor==2) {
     host_particle_id.clear();
     host_cell_id.clear();
@@ -400,18 +390,11 @@ double AtomT::host_memory_usage() const {
 template <class numtyp, class acctyp>
 void AtomT::sort_neighbor(const int num_atoms) {
 #if USE_LAMMPS_SORT
-  #if RADIX_PRINT
-  ucl_print(dev_cell_id, 1000);
-  printf("\n=======================\n");
-  #endif
   if (sorter) {
     sorter->sort(dev_cell_id, dev_particle_id, num_atoms);
   } else {
     printf("Error in LAMMPS GPU Sorter\n");
   }
-  #if RADIX_PRINT
-  ucl_print(dev_cell_id, 1000);
-  #endif
 #endif
 
   #ifdef USE_CUDPP

@@ -16,6 +16,7 @@
 #ifndef PAIR_GPU_ATOM_H
 #define PAIR_GPU_ATOM_H
 
+#include <memory>
 #include <cmath>
 #include "mpi.h"
 
@@ -490,7 +491,7 @@ class Atom {
   #endif
 
   #ifdef USE_LAMMPS_SORT
-  RadixSort *sorter;
+  std::unique_ptr<RadixSort> sorter;
   #endif
 
   #ifdef USE_HIP_DEVICE_SORT
