@@ -46,7 +46,7 @@ __kernel void k_charmm_long(const __global numtyp4 *restrict x_,
                             const numtyp cut_lj_innersq, const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
-  INIT_STORE_ANSWERS_Q;
+  INIT_STORE_ANSWERS;
 
   acctyp energy=(acctyp)0;
   acctyp e_coul=(acctyp)0;
@@ -166,7 +166,7 @@ __kernel void k_charmm_long_fast(const __global numtyp4 *restrict x_,
                                  const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
-  INIT_STORE_ANSWERS_Q;
+  INIT_STORE_ANSWERS;
 
   __local numtyp2 ljd[MAX_BIO_SHARED_TYPES];
   __local numtyp sp_lj[8];

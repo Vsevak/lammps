@@ -37,6 +37,7 @@ __kernel void k_lj_sdk(const __global numtyp4 *restrict x_,
                        const int nbor_pitch, const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS
 
   __local numtyp sp_lj[4];
   sp_lj[0]=sp_lj_in[0];
@@ -54,7 +55,7 @@ __kernel void k_lj_sdk(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
               n_stride,nbor_end,nbor);
 
@@ -128,6 +129,7 @@ __kernel void k_lj_sdk_fast(const __global numtyp4 *restrict x_,
                             const int nbor_pitch, const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS
 
   __local numtyp4 lj1[MAX_SHARED_TYPES*MAX_SHARED_TYPES];
   __local numtyp4 lj3[MAX_SHARED_TYPES*MAX_SHARED_TYPES];
@@ -152,7 +154,7 @@ __kernel void k_lj_sdk_fast(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
               n_stride,nbor_end,nbor);
 

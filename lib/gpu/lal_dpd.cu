@@ -178,6 +178,7 @@ __kernel void k_dpd(const __global numtyp4 *restrict x_,
                     const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS;
 
   acctyp energy=(acctyp)0;
   acctyp4 f;
@@ -188,7 +189,7 @@ __kernel void k_dpd(const __global numtyp4 *restrict x_,
 
   if (ii<inum) {
     int i, numj, nbor, nbor_end;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
               n_stride,nbor_end,nbor);
 
@@ -288,6 +289,7 @@ __kernel void k_dpd_fast(const __global numtyp4 *restrict x_,
                          const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS;
 
   __local numtyp4 coeff[MAX_SHARED_TYPES*MAX_SHARED_TYPES];
   __local numtyp sp_lj[4];
@@ -308,7 +310,7 @@ __kernel void k_dpd_fast(const __global numtyp4 *restrict x_,
 
   if (ii<inum) {
     int i, numj, nbor, nbor_end;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
               n_stride,nbor_end,nbor);
 
