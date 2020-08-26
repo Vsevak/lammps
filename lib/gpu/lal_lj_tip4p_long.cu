@@ -275,6 +275,7 @@ __kernel void k_lj_tip4p_long(const __global numtyp4 *restrict x_,
     __global acctyp4 *restrict ansO) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS
 
   acctyp energy = (acctyp)0;
   acctyp e_coul = (acctyp)0;
@@ -289,7 +290,7 @@ __kernel void k_lj_tip4p_long(const __global numtyp4 *restrict x_,
 
   if (ii<inum) {
     int i, numj, nbor, nbor_end;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
         n_stride,nbor_end,nbor);
 
@@ -510,30 +511,29 @@ __kernel void k_lj_tip4p_long(const __global numtyp4 *restrict x_,
     } // for nbor
     if (t_per_atom>1) {
 #if (ARCH < 300)
-      __local acctyp red_acc[6][BLOCK_PAIR];
-      red_acc[0][tid]=fO.x;
-      red_acc[1][tid]=fO.y;
-      red_acc[2][tid]=fO.z;
-      red_acc[3][tid]=fO.w;
+      store_answers_acc[0][tid]=fO.x;
+      store_answers_acc[1][tid]=fO.y;
+      store_answers_acc[2][tid]=fO.z;
+      store_answers_acc[3][tid]=fO.w;
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {
         if (offset < s) {
           for (int r=0; r<4; r++)
-            red_acc[r][tid] += red_acc[r][tid+s];
+            store_answers_acc[r][tid] += store_answers_acc[r][tid+s];
         }
       }
-      fO.x=red_acc[0][tid];
-      fO.y=red_acc[1][tid];
-      fO.z=red_acc[2][tid];
-      fO.w=red_acc[3][tid];
+      fO.x=store_answers_acc[0][tid];
+      fO.y=store_answers_acc[1][tid];
+      fO.z=store_answers_acc[2][tid];
+      fO.w=store_answers_acc[3][tid];
       if (vflag>0) {
         for (int r=0; r<6; r++) red_acc[r][tid]=vO[r];
         for (unsigned int s=t_per_atom/2; s>0; s>>=1) {
           if (offset < s) {
             for (int r=0; r<6; r++)
-              red_acc[r][tid] += red_acc[r][tid+s];
+              store_answers_acc[r][tid] += store_answers_acc[r][tid+s];
           }
         }
-        for (int r=0; r<6; r++) vO[r]=red_acc[r][tid];
+        for (int r=0; r<6; r++) vO[r]=store_answers_acc[r][tid];
       }
 #else
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {
@@ -588,6 +588,7 @@ __kernel void k_lj_tip4p_long_fast(const __global numtyp4 *restrict x_,
     __global acctyp4 *restrict ansO) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS
 
   __local numtyp4 lj1[MAX_SHARED_TYPES*MAX_SHARED_TYPES];
   __local numtyp4 lj3[MAX_SHARED_TYPES*MAX_SHARED_TYPES];
@@ -613,7 +614,7 @@ __kernel void k_lj_tip4p_long_fast(const __global numtyp4 *restrict x_,
   __syncthreads();
   if (ii<inum) {
     int i, numj, nbor, nbor_end;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
         n_stride,nbor_end,nbor);
 
@@ -834,30 +835,29 @@ __kernel void k_lj_tip4p_long_fast(const __global numtyp4 *restrict x_,
     } // for nbor
     if (t_per_atom>1) {
 #if (ARCH < 300)
-      __local acctyp red_acc[6][BLOCK_PAIR];
-      red_acc[0][tid]=fO.x;
-      red_acc[1][tid]=fO.y;
-      red_acc[2][tid]=fO.z;
-      red_acc[3][tid]=fO.w;
+      store_answers_acc[0][tid]=fO.x;
+      store_answers_acc[1][tid]=fO.y;
+      store_answers_acc[2][tid]=fO.z;
+      store_answers_acc[3][tid]=fO.w;
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {
         if (offset < s) {
           for (int r=0; r<4; r++)
-            red_acc[r][tid] += red_acc[r][tid+s];
+            store_answers_acc[r][tid] += store_answers_acc[r][tid+s];
         }
       }
-      fO.x=red_acc[0][tid];
-      fO.y=red_acc[1][tid];
-      fO.z=red_acc[2][tid];
-      fO.w=red_acc[3][tid];
+      fO.x=store_answers_acc[0][tid];
+      fO.y=store_answers_acc[1][tid];
+      fO.z=store_answers_acc[2][tid];
+      fO.w=store_answers_acc[3][tid];
       if (vflag>0) {
         for (int r=0; r<6; r++) red_acc[r][tid]=vO[r];
         for (unsigned int s=t_per_atom/2; s>0; s>>=1) {
           if (offset < s) {
             for (int r=0; r<6; r++)
-              red_acc[r][tid] += red_acc[r][tid+s];
+              store_answers_acc[r][tid] += store_answers_acc[r][tid+s];
           }
         }
-        for (int r=0; r<6; r++) vO[r]=red_acc[r][tid];
+        for (int r=0; r<6; r++) vO[r]=store_answers_acc[r][tid];
       }
 #else
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {

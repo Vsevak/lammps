@@ -40,36 +40,35 @@ _texture( sw3_tex,int4);
 //#define THREE_CONCURRENT
 
 #if (ARCH < 300)
-
+#define INIT_STORE_ANSWERS_P __local acctyp store_answers_p_acc[6][BLOCK_ELLIPSE];
 #define store_answers_p(f, energy, virial, ii, inum, tid, t_per_atom, offset, \
                       eflag, vflag, ans, engv)                              \
   if (t_per_atom>1) {                                                       \
-    __local acctyp red_acc[6][BLOCK_ELLIPSE];                               \
-    red_acc[0][tid]=f.x;                                                    \
-    red_acc[1][tid]=f.y;                                                    \
-    red_acc[2][tid]=f.z;                                                    \
-    red_acc[3][tid]=energy;                                                 \
+	  store_answers_p_acc[0][tid]=f.x;                                                    \
+	  store_answers_p_acc[1][tid]=f.y;                                                    \
+	  store_answers_p_acc[2][tid]=f.z;                                                    \
+	  store_answers_p_acc[3][tid]=energy;                                                 \
     for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
       if (offset < s) {                                                     \
         for (int r=0; r<4; r++)                                             \
-          red_acc[r][tid] += red_acc[r][tid+s];                             \
+		store_answers_p_acc[r][tid] += store_answers_p_acc[r][tid+s];                             \
       }                                                                     \
     }                                                                       \
-    f.x=red_acc[0][tid];                                                    \
-    f.y=red_acc[1][tid];                                                    \
-    f.z=red_acc[2][tid];                                                    \
-    energy=red_acc[3][tid];                                                 \
+    f.x=store_answers_p_acc[0][tid];                                                    \
+    f.y=store_answers_p_acc[1][tid];                                                    \
+    f.z=store_answers_p_acc[2][tid];                                                    \
+    energy=store_answers_p_acc[3][tid];                                                 \
     if (vflag>0) {                                                          \
       for (int r=0; r<6; r++)                                               \
-        red_acc[r][tid]=virial[r];                                          \
+	  store_answers_p_acc[r][tid]=virial[r];                                          \
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                       \
         if (offset < s) {                                                   \
           for (int r=0; r<6; r++)                                           \
-            red_acc[r][tid] += red_acc[r][tid+s];                           \
+		  store_answers_p_acc[r][tid] += store_answers_p_acc[r][tid+s];                           \
         }                                                                   \
       }                                                                     \
       for (int r=0; r<6; r++)                                               \
-        virial[r]=red_acc[r][tid];                                          \
+        virial[r]=store_answers_p_acc[r][tid];                                          \
     }                                                                       \
   }                                                                         \
   if (offset==0) {                                                          \
@@ -93,6 +92,7 @@ _texture( sw3_tex,int4);
 
 #else
 
+#define INIT_STORE_ANSWERS_P
 #define store_answers_p(f, energy, virial, ii, inum, tid, t_per_atom, offset, \
                       eflag, vflag, ans, engv)                              \
   if (t_per_atom>1) {                                                       \
@@ -139,7 +139,7 @@ __kernel void k_sw_short_nbor(const __global numtyp4 *restrict x_,
                            const __global int * dev_packed,
                            __global int * dev_short_nbor,
                            const int inum, const int nbor_pitch, const int t_per_atom) {
-  __local int n_stride;
+  int n_stride;
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
 
@@ -202,9 +202,10 @@ __kernel void k_sw(const __global numtyp4 *restrict x_,
                    __global acctyp *restrict engv,
                    const int eflag, const int vflag, const int inum,
                    const int nbor_pitch, const int t_per_atom) {
-  __local int n_stride;
+  int n_stride;
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS
 
   acctyp energy=(acctyp)0;
   acctyp4 f;
@@ -416,6 +417,7 @@ __kernel void k_sw_three_center(const __global numtyp4 *restrict x_,
 
   int tid, ii, offset;
   atom_info(tpa_sq,ii,tid,offset);
+  INIT_STORE_ANSWERS_P
 
   acctyp energy=(acctyp)0;
   acctyp4 f;
@@ -558,6 +560,11 @@ __kernel void k_sw_three_end(const __global numtyp4 *restrict x_,
 
   int tid, ii, offset;
   atom_info(tpa_sq,ii,tid,offset);
+#ifdef THREE_CONCURRENT
+  INIT_STORE_ANSWERS;
+#else
+  INIT_STORE_ANSWERS_P;
+#endif
 
   acctyp energy=(acctyp)0;
   acctyp4 f;
@@ -707,6 +714,11 @@ __kernel void k_sw_three_end_vatom(const __global numtyp4 *restrict x_,
 
   int tid, ii, offset;
   atom_info(tpa_sq,ii,tid,offset);
+#ifdef THREE_CONCURRENT
+  INIT_STORE_ANSWERS;
+#else
+  INIT_STORE_ANSWERS_P;
+#endif
 
   acctyp energy=(acctyp)0;
   acctyp4 f;

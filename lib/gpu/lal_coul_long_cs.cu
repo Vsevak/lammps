@@ -48,38 +48,37 @@ _texture( q_tex,int2);
 #define store_answers_lq(f, e_coul, virial, ii, inum, tid,                  \
                         t_per_atom, offset, eflag, vflag, ans, engv)        \
   if (t_per_atom>1) {                                                       \
-    __local acctyp red_acc[6][BLOCK_PAIR];                                  \
                                                                             \
-    red_acc[0][tid]=f.x;                                                    \
-    red_acc[1][tid]=f.y;                                                    \
-    red_acc[2][tid]=f.z;                                                    \
-    red_acc[3][tid]=e_coul;                                                 \
+		store_answers_acc[0][tid]=f.x;                                          \
+		store_answers_acc[1][tid]=f.y;                                          \
+		store_answers_acc[2][tid]=f.z;                                          \
+		store_answers_acc[3][tid]=e_coul;                                       \
                                                                             \
     for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
       if (offset < s) {                                                     \
         for (int r=0; r<4; r++)                                             \
-          red_acc[r][tid] += red_acc[r][tid+s];                             \
+          store_answers_acc[r][tid] += store_answers_acc[r][tid+s];         \
       }                                                                     \
     }                                                                       \
                                                                             \
-    f.x=red_acc[0][tid];                                                    \
-    f.y=red_acc[1][tid];                                                    \
-    f.z=red_acc[2][tid];                                                    \
-    e_coul=red_acc[3][tid];                                                 \
+    f.x=store_answers_acc[0][tid];                                          \
+    f.y=store_answers_acc[1][tid];                                          \
+    f.z=store_answers_acc[2][tid];                                          \
+    e_coul=store_answers_acc[3][tid];                                       \
                                                                             \
     if (vflag>0) {                                                          \
       for (int r=0; r<6; r++)                                               \
-        red_acc[r][tid]=virial[r];                                          \
+        store_answers_acc[r][tid]=virial[r];                                \
                                                                             \
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                       \
         if (offset < s) {                                                   \
           for (int r=0; r<6; r++)                                           \
-            red_acc[r][tid] += red_acc[r][tid+s];                           \
+            store_answers_acc[r][tid] += store_answers_acc[r][tid+s];       \
         }                                                                   \
       }                                                                     \
                                                                             \
       for (int r=0; r<6; r++)                                               \
-        virial[r]=red_acc[r][tid];                                          \
+        virial[r]=store_answers_acc[r][tid];                                \
     }                                                                       \
   }                                                                         \
                                                                             \
@@ -152,6 +151,7 @@ __kernel void k_coul_long_cs(const __global numtyp4 *restrict x_,
                           const numtyp g_ewald, const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS
 
   __local numtyp sp_cl[4];
   sp_cl[0]=sp_cl_in[0];
@@ -169,7 +169,7 @@ __kernel void k_coul_long_cs(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
               n_stride,nbor_end,nbor);
 
@@ -264,6 +264,7 @@ __kernel void k_coul_long_cs_fast(const __global numtyp4 *restrict x_,
                                const numtyp g_ewald, const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS
 
   __local numtyp scale[MAX_SHARED_TYPES*MAX_SHARED_TYPES];
   __local numtyp sp_cl[4];
@@ -284,7 +285,7 @@ __kernel void k_coul_long_cs_fast(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
               n_stride,nbor_end,nbor);
 

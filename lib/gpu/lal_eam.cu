@@ -54,16 +54,16 @@ _texture( z2r_sp2_tex,int4);
 
 #if (ARCH < 300)
 
+#define INIT_STORE_ENERGY_FP __local acctyp store_energy_fp_acc[BLOCK_PAIR];
 #define store_energy_fp(rho,energy,ii,inum,tid,t_per_atom,offset,           \
                         eflag,vflag,engv,rdrho,nrho,i,rhomax)               \
   if (t_per_atom>1) {                                                       \
-    __local acctyp red_acc[BLOCK_PAIR];                                     \
-    red_acc[tid]=rho;                                                       \
+    store_energy_fp_acc[tid]=rho;                                                       \
     for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
       if (offset < s)                                                       \
-         red_acc[tid] += red_acc[tid+s];                                    \
+         store_energy_fp_acc[tid] += store_energy_fp_acc[tid+s];                                    \
       }                                                                     \
-      rho=red_acc[tid];                                                     \
+      rho=store_energy_fp_acc[tid];                                                     \
   }                                                                         \
   if (offset==0) {                                                          \
     numtyp p = rho*rdrho + (numtyp)1.0;                                     \
@@ -85,33 +85,32 @@ _texture( z2r_sp2_tex,int4);
 
 #define store_answers_eam(f, energy, virial, ii, inum, tid, t_per_atom,     \
                       offset, elag, vflag, ans, engv)                       \
-  if (t_per_atom>1) {                                                       \
-    __local acctyp red_acc[6][BLOCK_PAIR];                                  \
-    red_acc[0][tid]=f.x;                                                    \
-    red_acc[1][tid]=f.y;                                                    \
-    red_acc[2][tid]=f.z;                                                    \
-    red_acc[3][tid]=energy;                                                 \
+  if (t_per_atom>1) {                                                       \                                \
+    store_answers_acc[0][tid]=f.x;                                                    \
+    store_answers_acc[1][tid]=f.y;                                                    \
+    store_answers_acc[2][tid]=f.z;                                                    \
+    store_answers_acc[3][tid]=energy;                                                 \
     for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                         \
       if (offset < s) {                                                     \
         for (int r=0; r<4; r++)                                             \
-          red_acc[r][tid] += red_acc[r][tid+s];                             \
+          store_answers_acc[r][tid] += store_answers_acc[r][tid+s];                             \
       }                                                                     \
     }                                                                       \
-    f.x=red_acc[0][tid];                                                    \
-    f.y=red_acc[1][tid];                                                    \
-    f.z=red_acc[2][tid];                                                    \
-    energy=red_acc[3][tid];                                                 \
+    f.x=store_answers_acc[0][tid];                                                    \
+    f.y=store_answers_acc[1][tid];                                                    \
+    f.z=store_answers_acc[2][tid];                                                    \
+    energy=store_answers_acc[3][tid];                                                 \
     if (vflag>0) {                                                          \
       for (int r=0; r<6; r++)                                               \
-        red_acc[r][tid]=virial[r];                                          \
+        store_answers_acc[r][tid]=virial[r];                                          \
       for (unsigned int s=t_per_atom/2; s>0; s>>=1) {                       \
         if (offset < s) {                                                   \
           for (int r=0; r<6; r++)                                           \
-            red_acc[r][tid] += red_acc[r][tid+s];                           \
+            store_answers_acc[r][tid] += store_answers_acc[r][tid+s];                           \
         }                                                                   \
       }                                                                     \
       for (int r=0; r<6; r++)                                               \
-        virial[r]=red_acc[r][tid];                                          \
+        virial[r]=store_answers_acc[r][tid];                                          \
     }                                                                       \
   }                                                                         \
   if (offset==0) {                                                          \
@@ -131,6 +130,7 @@ _texture( z2r_sp2_tex,int4);
 
 #else
 
+#define INIT_STORE_ENERGY_FP
 #define store_energy_fp(rho,energy,ii,inum,tid,t_per_atom,offset,           \
                         eflag,vflag,engv,rdrho,nrho,i,rhomax)               \
   if (t_per_atom>1) {                                                       \
@@ -188,6 +188,8 @@ _texture( z2r_sp2_tex,int4);
 
 #endif
 
+
+
 __kernel void k_energy(const __global numtyp4 *restrict x_,
                        const __global int2 *restrict type2rhor_z2r,
                        const __global int *restrict type2frho,
@@ -205,6 +207,7 @@ __kernel void k_energy(const __global numtyp4 *restrict x_,
                        const int nr, const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ENERGY_FP;
 
   acctyp rho = (acctyp)0;
   acctyp energy = (acctyp)0;
@@ -212,7 +215,7 @@ __kernel void k_energy(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
               n_stride,nbor_end,nbor);
 
@@ -269,6 +272,7 @@ __kernel void k_energy_fast(const __global numtyp4 *restrict x_,
                             const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ENERGY_FP;
 
   __local int2 type2rhor_z2r[MAX_SHARED_TYPES*MAX_SHARED_TYPES];
   __local int type2frho[MAX_SHARED_TYPES];
@@ -289,7 +293,7 @@ __kernel void k_energy_fast(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
               n_stride,nbor_end,nbor);
 
@@ -344,6 +348,7 @@ __kernel void k_eam(const __global numtyp4 *restrict x_,
                     const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS;
 
   acctyp energy=(acctyp)0;
   acctyp4 f;
@@ -357,7 +362,7 @@ __kernel void k_eam(const __global numtyp4 *restrict x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
               n_stride,nbor_end,nbor);
 
@@ -452,6 +457,7 @@ __kernel void k_eam_fast(const __global numtyp4 *x_,
                          const numtyp rdr, const int nr, const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS;
 
   __local int2 type2rhor_z2r[MAX_SHARED_TYPES*MAX_SHARED_TYPES];
 
@@ -471,7 +477,7 @@ __kernel void k_eam_fast(const __global numtyp4 *x_,
   if (ii<inum) {
     int nbor, nbor_end;
     int i, numj;
-    __local int n_stride;
+    int n_stride;
     nbor_info(dev_nbor,dev_packed,nbor_pitch,t_per_atom,ii,offset,i,numj,
               n_stride,nbor_end,nbor);
 
