@@ -239,7 +239,7 @@ bool AtomT::add_fields(const bool charge, const bool rot,
     #endif
 
     #ifdef USE_LAMMPS_SORT
-    if (!sorter) {
+    if (_gpu_nbor==1 && !sorter) {
       sorter.reset(new RadixSort(*dev, _ocl_compile_string));
     }
     #endif
