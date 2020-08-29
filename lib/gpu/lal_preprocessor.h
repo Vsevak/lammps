@@ -92,6 +92,7 @@
   #endif
   #define __local __shared__
   #define __global
+  #define __private
   #define restrict __restrict__
   #define atom_add atomicAdd
   #define ucl_inline static __inline__ __device__
@@ -223,6 +224,7 @@
 #define __kernel extern "C" __global__
 #define __local __shared__
 #define __global
+#define __private
 #define restrict __restrict__
 #define atom_add atomicAdd
 #define ucl_inline static __inline__ __device__
