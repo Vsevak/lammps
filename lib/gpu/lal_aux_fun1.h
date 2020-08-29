@@ -43,7 +43,7 @@
 #if (ARCH < 300)
 
 #define INIT_STORE_ANSWERS __local acctyp store_answers_acc[6][BLOCK_PAIR];
-#define INIT_STORE_ANSWERS_TQ __local acctyp store_answers_acc[8][BLOCK_PAIR];
+#define INIT_STORE_ANSWERS_TQ __local acctyp store_answers_tq_acc[8][BLOCK_PAIR];
 
 #define store_answers(f, energy, virial, ii, inum, tid, t_per_atom, offset, \
                       eflag, vflag, ans, engv)                              \

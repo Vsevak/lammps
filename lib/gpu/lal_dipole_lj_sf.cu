@@ -50,7 +50,7 @@ __kernel void k_dipole_lj_sf(const __global numtyp4 *restrict x_,
                              const numtyp qqrd2e, const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
-  __local acctyp store_answers_tq_acc[8][BLOCK_PAIR];
+  INIT_STORE_ANSWERS_TQ
 
   __local numtyp sp_lj[8];
   sp_lj[0]=sp_lj_in[0];
@@ -290,7 +290,7 @@ __kernel void k_dipole_lj_sf_fast(const __global numtyp4 *restrict x_,
                                   const int t_per_atom) {
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
-  __local acctyp store_answers_tq_acc[8][BLOCK_PAIR];
+  INIT_STORE_ANSWERS_TQ
 
   __local numtyp4 lj1[MAX_SHARED_TYPES*MAX_SHARED_TYPES];
   __local numtyp4 lj3[MAX_SHARED_TYPES*MAX_SHARED_TYPES];
