@@ -415,6 +415,7 @@ __kernel void k_tersoff_zbl_repulsive(const __global numtyp4 *restrict x_,
   int n_stride;
   int tid, ii, offset;
   atom_info(t_per_atom,ii,tid,offset);
+  INIT_STORE_ANSWERS;
 
   __local numtyp4 ts1[SHARED_SIZE];
   __local numtyp4 ts2[SHARED_SIZE];
