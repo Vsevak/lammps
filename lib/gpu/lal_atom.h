@@ -1,4 +1,5 @@
 /***************************************************************************
+
                                    atom.h
                              -------------------
                             W. Michael Brown (ORNL)
@@ -47,7 +48,7 @@ using namespace ucl_cudadr;
 #endif
 
 #ifdef USE_LAMMPS_SORT
-#include "lal_sort.h"
+#include "lal_radixsort.h"
 #endif
 
 #include "lal_precision.h"

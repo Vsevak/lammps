@@ -1,5 +1,5 @@
 /*
- * lal_sort.cu
+ * lal_radixsort.cu
  *
  *  Created on: Aug 14, 2020
  *      Author: Vsevolod Nikolskiy

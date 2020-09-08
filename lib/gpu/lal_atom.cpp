@@ -14,8 +14,8 @@
  ***************************************************************************/
 
 #include "lal_atom.h"
-#include "lal_sort.h"
 #include "geryon/ucl_print.h"
+#include "lal_radixsort.h"
 
 #ifdef USE_HIP_DEVICE_SORT
 #include <hip/hip_runtime.h>

@@ -1,5 +1,5 @@
 /*
- * lal_sort.cpp
+ * lal_radixsort.cpp
  *
  *  Created on: Aug 15, 2020
  *      Author: Vsevolod Nikolskiy
@@ -8,8 +8,8 @@
 
 #include <string>
 #include <cmath>
-#include "lal_sort.h"
 #include "lal_precision.h"
+#include "lal_radixsort.h"
 #if defined(USE_OPENCL)
 #include "sort_cl.h"
 #elif defined(USE_CUDART)
