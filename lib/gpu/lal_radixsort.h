@@ -9,13 +9,14 @@
 #ifndef LAL_SORT_H_
 #define LAL_SORT_H_
 
+#include "lal_sort.h"
 #include "lal_scan.h"
 
 namespace LAMMPS_AL {
 
 #define RADIX_PRINT 0
 
-class RadixSort {
+class RadixSort : public Sort {
 public:
   RadixSort(UCL_Device &gpu, std::string);
   ~RadixSort() = default;
@@ -24,9 +25,12 @@ public:
   RadixSort(RadixSort&&) noexcept = default;
   RadixSort& operator=(RadixSort&&) noexcept = default;
 
-  void sort(UCL_D_Vec<unsigned int> &k, UCL_D_Vec<int> &v, const int n);
+  bool alloc(const int n) override;
+  bool resize(const int n) override;
+  void clear() override;
+  void sort(UCL_D_Vec<unsigned int> &k,
+      UCL_D_Vec<int> &v, const int n) override;
 private:
-  bool is_sorted(UCL_D_Vec<unsigned int> &input, const int n);
   void compile_kernels();
 
   UCL_Device &gpu;
@@ -34,14 +38,15 @@ private:
   std::string ocl_param;
 
   Scan scanner;
-  UCL_D_Vec<unsigned int> k_out;
-  UCL_D_Vec<int> v_out;
-  UCL_D_Vec<unsigned int> prefix;
-  UCL_D_Vec<unsigned int> block;
-  UCL_D_Vec<unsigned int> scan_block;
-  UCL_Vector<int, int> f_sorted;
+  UCL_D_Vec<unsigned int> k_out{};
+  UCL_D_Vec<int>          v_out{};
+  UCL_D_Vec<unsigned int> prefix{};
+  UCL_D_Vec<unsigned int> block{};
+  UCL_D_Vec<unsigned int> scan_block{};
 
-  static const int block_size;
+  bool _allocated{false};
+  // This value must be consistent with BLOCK in lal_sort.cu
+  static const int block_size{256};
 };
 
 }

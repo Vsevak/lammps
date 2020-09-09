@@ -47,6 +47,7 @@ public:
   Scan(Scan &&) noexcept = default;
   Scan& operator=(Scan &&) noexcept = default;
 
+  void clear();
   void scan(UCL_D_Vec<unsigned int> &input,
       UCL_D_Vec<unsigned int> &output, const int n, const int iter=0);
 private:

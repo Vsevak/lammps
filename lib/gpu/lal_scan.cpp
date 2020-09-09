@@ -62,6 +62,11 @@ void Scan::scan(UCL_D_Vec<unsigned int> &input,
   }
 }
 
+void Scan::clear() {
+  block_res.clear();
+  block_res_out.clear();
+}
+
 }
 
 

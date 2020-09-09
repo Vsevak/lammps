@@ -19,43 +19,78 @@ const char *sort=0;
 #endif
 
 namespace LAMMPS_AL {
-// This value must be consistent with BLOCK in lal_sort.cu
-const int RadixSort::block_size = 256;
-
 
 RadixSort::RadixSort(UCL_Device &d, std::string param) :
     gpu(d), ocl_param(param), scanner(d, param) {
   printf("\nGPU Radix Sort enabled\n");
-  k_out.alloc(16, gpu);
-  v_out.alloc(16, gpu);
-  prefix.alloc(16, gpu);
-  block.alloc(8, gpu);
-  scan_block.alloc(8, gpu);
-  f_sorted.alloc(8, gpu);
+  alloc(0);
   compile_kernels();
 }
 
-void RadixSort::sort(
-    UCL_D_Vec<unsigned int> &key, UCL_D_Vec<int> &value, const int n) {
+bool RadixSort::alloc(const int _n) {
+  if (_allocated) {
+    return resize(_n);
+  }
+  int n = std::max(_n, 16);
+  int rc = k_out.alloc(n, gpu);
+  if (rc == UCL_SUCCESS)
+    rc = v_out.alloc(n, gpu);
+  if (rc == UCL_SUCCESS)
+    rc = prefix.alloc(n, gpu);
+  int t = static_cast<int>(std::ceil(static_cast<double>(n)/block_size));
+  t = std::max(4*t, 8);
+  if (rc == UCL_SUCCESS)
+    block.alloc(t, gpu);
+  if (rc == UCL_SUCCESS)
+    scan_block.alloc(t, gpu);
+  if (rc == UCL_SUCCESS)
+    _allocated = true;
+  return rc;
+}
+
+void RadixSort::clear() {
+  if (!_allocated) return;
+  _allocated = false;
+  k_out.clear();
+  v_out.clear();
+  prefix.clear();
+  block.clear();
+  scan_block.clear();
+  scanner.clear();
+}
+
+bool RadixSort::resize(const int n) {
+  if (!_allocated) return alloc(n);
+  k_out.resize_ib(n);
+  v_out.resize_ib(n);
+  prefix.resize_ib(n);
+  int t = static_cast<int>(std::ceil(static_cast<double>(n)/block_size));
+  block.resize_ib(4*t);
+  scan_block.resize_ib(4*t);
+  return UCL_SUCCESS;
+}
+
+void RadixSort::sort(UCL_D_Vec<unsigned int> &key,
+    UCL_D_Vec<int> &value, const int n) {
 
   int t = static_cast<int>(std::ceil(static_cast<double>(n)/block_size));
   if (key.cols() < n) {
-    printf("\nError: RadixSort key len=%lu is shorter than n=%d.\n",
+    printf("\nError: RadixSort key len=%lu is less than n=%d required.\n",
         key.cols(),  n);
     return;
   }
   if (value.cols() < n) {
-    printf("\nError: RadixSort key len=%lu is shorter than n=%d.\n",
+    printf("\nError: RadixSort key len=%lu is less than n=%d required.\n",
         value.cols(), n);
     return;
   }
-  k_out.resize_ib(n);
-  v_out.resize_ib(n);
-  prefix.resize_ib(n);
+//  auto check_size = [n] (auto& vec) { return (int)vec.cols() < n; };
+//  if ( check_size(k_out) || check_size(v_out) || check_size(prefix)) {
+//    printf("WARNING: resize\n");
+//    resize(n);
+//  }
   prefix.zero(n);
-  block.resize_ib(4*t);
   block.zero(4*t);
-  scan_block.resize_ib(4*t);
   scan_block.zero(4*t);
   for (int b = 0; b <= 30; b+=2) {
     k_local.set_size(t, block_size);
@@ -83,24 +118,6 @@ void RadixSort::sort(
     k_global_scatter.run(&key, &value, &k_out, &v_out, &n, &prefix, &scan_block, &b);
   }
 }
-
-bool RadixSort::is_sorted(UCL_D_Vec<unsigned int> &input, const int n) {
-  int t = static_cast<int>(std::ceil(static_cast<double>(n)/block_size));
-  f_sorted.resize_ib(t);
-  k_check.set_size(t, block_size);
-  k_check.run(&input, &n, &f_sorted);
-  f_sorted.update_host(false);
-  int not_ordered = 0;
-#pragma omp parallel for reduction(+ : not_ordered)
-  for (int i = 0; i<t; ++i) {
-    not_ordered = not_ordered + f_sorted[i];
-  }
-#if RADIX_PRINT
-  printf(" %d ", not_ordered);
-#endif
-  return not_ordered==0;
-}
-
 
 void RadixSort::compile_kernels() {
   UCL_Program dev_program(gpu);

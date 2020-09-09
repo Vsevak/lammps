@@ -492,7 +492,7 @@ class Atom {
   #endif
 
   #ifdef USE_LAMMPS_SORT
-  std::unique_ptr<RadixSort> sorter;
+  std::unique_ptr<Sort> sorter;
   #endif
 
   #ifdef USE_HIP_DEVICE_SORT

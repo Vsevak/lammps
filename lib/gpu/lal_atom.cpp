@@ -14,8 +14,8 @@
  ***************************************************************************/
 
 #include "lal_atom.h"
-#include "geryon/ucl_print.h"
 #include "lal_radixsort.h"
+#include "geryon/ucl_print.h"
 
 #ifdef USE_HIP_DEVICE_SORT
 #include <hip/hip_runtime.h>
@@ -98,8 +98,10 @@ bool AtomT::alloc(const int nall) {
   #endif
 
   #ifdef USE_LAMMPS_SORT
-  if (_gpu_nbor==1 && !sorter) {
-    sorter.reset(new RadixSort(*dev, _ocl_compile_string));
+  if (_gpu_nbor==1) {
+    if (!sorter)
+      sorter.reset(new RadixSort(*dev, _ocl_compile_string));
+    sorter->alloc(_max_atoms);
   }
   #endif
 
@@ -239,8 +241,10 @@ bool AtomT::add_fields(const bool charge, const bool rot,
     #endif
 
     #ifdef USE_LAMMPS_SORT
-    if (_gpu_nbor==1 && !sorter) {
-      sorter.reset(new RadixSort(*dev, _ocl_compile_string));
+    if (_gpu_nbor==1) {
+      if (!sorter)
+        sorter.reset(new RadixSort(*dev, _ocl_compile_string));
+      sorter->alloc(_max_atoms);
     }
     #endif
 
@@ -336,7 +340,7 @@ void AtomT::clear_resize() {
   if (_gpu_nbor==1) {
     #ifdef USE_CUDPP
     cudppDestroyPlan(sort_plan);
-    #elif USE_HIP_DEVICE_SORT
+    #elif defined(USE_HIP_DEVICE_SORT)
     if(sort_out_keys)     hipFree(sort_out_keys);
     if(sort_out_values)   hipFree(sort_out_values);
     if(sort_temp_storage) hipFree(sort_temp_storage);
@@ -345,7 +349,10 @@ void AtomT::clear_resize() {
     sort_temp_storage = nullptr;
     sort_temp_storage_size = 0;
     sort_out_size = 0;
+    #elif defined(USE_LAMMPS_SORT)
+    sorter->clear();
     #endif
+
   }
   if (_gpu_nbor==2) {
     host_particle_id.clear();
